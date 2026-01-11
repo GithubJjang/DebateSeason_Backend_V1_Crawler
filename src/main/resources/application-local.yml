@@ -22,7 +22,7 @@ spring:
       mode: always
 
   datasource:
-    # 1. 크롤러 <-> 토론철 백엔드 서버 간 연결 ( MariaDB)
+    # 1. 크롤러 <-> 토론철 백엔드 서버 간 연결 (MariaDB)
     publisher:
       driver-class-name: org.mariadb.jdbc.Driver
       jdbc-url: jdbc:mariadb://127.0.0.1:3307/debate?serverTimezone=Asia/Seoul
@@ -71,15 +71,3 @@ logging.level:
 
 server:
   port: 8081
-
-sentry:
-  dsn: https://6b863bf32ba1f2a40529b97004bb186c@o4510350710407168.ingest.us.sentry.io/4510350712111104
-  # Add data like request headers and IP for users,
-  # see https://docs.sentry.io/platforms/java/guides/spring-boot/data-management/data-collected/ for more info
-  send-default-pii: true
-  # Enable sending logs to Sentry
-  logs:
-    enabled: true
-
-aws:
-  port-forwarding : aws ec2-instance-connect open-tunnel --instance-connect-endpoint-id eice-0c9dc451b3f34124d --private-ip-address 10.0.2.122 --local-port 3306 --remote-port 3389 --profile dbconnect --region ap-northeast-2
