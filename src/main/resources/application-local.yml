@@ -1,0 +1,85 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+  task:
+    scheduling:
+      pool:
+        size: 1
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        show-sql: true
+        highlight_sql: true
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
+
+  datasource:
+    # 1. 크롤러 <-> 토론철 백엔드 서버 간 연결 ( MariaDB)
+    publisher:
+      driver-class-name: org.mariadb.jdbc.Driver
+      jdbc-url: jdbc:mariadb://127.0.0.1:3307/debate?serverTimezone=Asia/Seoul
+      username: root
+      password: 1234
+
+    # 2. 크롤러 <-> 로그 서버 간 연결 ( H2 Database )
+    logger:
+      driver-class-name: org.h2.Driver
+      #jdbc-url: jdbc:h2:mem:test # In-Memory
+      jdbc-url: jdbc:h2:~/test1 # Embedded
+      username: sa
+      password:
+
+  h2:
+    console:
+      enabled: true
+#     path: /h2-console
+
+#  datasource:
+#    driver-class-name: org.mariadb.jdbc.Driver
+#    #url: jdbc:mariadb://127.0.0.1:3306/debate_season?serverTimezone=Asia/Seoul # (운영)
+#    #url: jdbc:mariadb://127.0.0.1:3306/dev_debate_season?serverTimezone=Asia/Seoul # (개발)
+#    #url: jdbc:mariadb://172.17.0.1:3306/dev_debate_season?serverTimezone=Asia/Seoul # (리눅스)
+#    #url: jdbc:mariadb://host.docker.internal:3306/dev_debate_season?serverTimezone=Asia/Seoul # ( Host : Windows 도커), 이를 통해서 host 네트워크 사용 가능.
+#    url: jdbc:mariadb://127.0.0.1:3307/debate?serverTimezone=Asia/Seoul # (로컬)
+#    username: root  #root #sa
+#    password: 1234  #1234 #password1234
+
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 11000
+
+  output:
+    ansi:
+      enabled: always
+
+
+logging.level:
+  root: info
+
+  # Database & ORM
+  org.hibernate.SQL: debug
+  org.hibernate.orm.jdbc.bind: trace  # 파라미터 바인딩 확인용
+
+server:
+  port: 8081
+
+sentry:
+  dsn: https://6b863bf32ba1f2a40529b97004bb186c@o4510350710407168.ingest.us.sentry.io/4510350712111104
+  # Add data like request headers and IP for users,
+  # see https://docs.sentry.io/platforms/java/guides/spring-boot/data-management/data-collected/ for more info
+  send-default-pii: true
+  # Enable sending logs to Sentry
+  logs:
+    enabled: true
+
+aws:
+  port-forwarding : aws ec2-instance-connect open-tunnel --instance-connect-endpoint-id eice-0c9dc451b3f34124d --private-ip-address 10.0.2.122 --local-port 3306 --remote-port 3389 --profile dbconnect --region ap-northeast-2

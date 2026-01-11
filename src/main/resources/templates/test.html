@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+</head>
+<body>
+    this page is web view
+    <div th:each="entry, stat : ${map}">
+        <!-- entry는 Map.Entry -->
+
+        <h3 th:text="${entry.key}" th:name="|category_${stat.index}|">카테고리</h3>
+
+        <ul>
+            <li th:each="item : ${entry.value}" th:text="${item}">아이템</li>
+        </ul>
+
+        <div th:switch="${entry.key}">
+
+            <!--
+            <label th:case="'etc'">
+                긍정<input type="radio" th:name="|opinion_${stat.index}|" value="positive" checked>
+            </label>
+            -->
+
+            <label th:case="*"> <!-- default -->
+                긍정<input type="radio" th:name="|opinion_${stat.index}|" value="positive">
+                부정<input type="radio" th:name="|opinion_${stat.index}|" value="negative">
+            </label>
+
+        </div>
+
+        <br/>
+
+    </div>
+
+    <label>
+        <button onclick="hello()">제출</button>
+    </label>
+
+
+    <script th:inline="javascript">
+        // 응답값과 그 크기.
+        const map = /*[[${map}]]*/
+        const size = Object.keys(map).length;
+
+
+        const container = {}
+
+        const request = function(data){
+              try {
+                    const response = fetch("http://localhost:8081/testApi", {
+                      method: "POST",               // 요청 방식
+                      headers: {
+                        "Content-Type": "application/json", // JSON 형식으로 보냄
+                      },
+                      body: JSON.stringify(data),
+                    })
+
+                    console.log("응답:", response)
+
+                    alert('성공적인 수행')
+
+                  } catch (error) {
+                    console.error("에러:", error);
+                 }
+        }
+
+        const hello = function(){
+
+            try{
+                    for( let i=0; i<size; i++){
+
+                        // 1. 평가.
+                        const opinion = document.querySelector(`input[name="opinion_${i}"]:checked`)
+
+                        // 2. 카테고리.
+                        const keyword = document.querySelector(`h3[name="category_${i}"]`)
+
+                        // 3. container에 추가하기.
+                        container[keyword.textContent] = opinion.value
+
+                    }
+                    console.log(container)
+
+                    request(container)
+                }
+            catch(error){
+                alert(error)
+            }
+
+        }
+
+
+
+
+    </script>
+
+</body>
+
+
+
+</html>
+
+
