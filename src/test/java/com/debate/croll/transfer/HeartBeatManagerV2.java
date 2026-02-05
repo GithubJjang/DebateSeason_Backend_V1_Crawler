@@ -6,8 +6,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.debate.croll.publisher.crawler.common.Record;
-import com.debate.croll.publisher.crawler.common.Type;
+import com.debate.croll.producer.crawler.common.Record;
+import com.debate.croll.producer.crawler.common.Type;
 
 public class HeartBeatManagerV2 {
 

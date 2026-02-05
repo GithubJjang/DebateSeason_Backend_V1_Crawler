@@ -6,10 +6,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.debate.croll.publisher.monitor.sseEmitter.session.Session;
+import com.debate.croll.producer.monitor.sseEmitter.session.Session;
 
-import com.debate.croll.publisher.crawler.manager.FileManager;
-import com.debate.croll.publisher.crawler.manager.ProgressLogFormatter;
+import com.debate.croll.producer.crawler.manager.FileManager;
+import com.debate.croll.producer.crawler.manager.ProgressLogFormatter;
 
 public class SseHeartbeatSenderV2 {
 

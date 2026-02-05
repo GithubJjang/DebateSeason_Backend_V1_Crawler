@@ -1,10 +1,8 @@
 package com.debate.croll.transfer;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.debate.croll.publisher.monitor.sseEmitter.session.Session;
-import com.debate.croll.publisher.monitor.sseEmitter.session.SessionContainer;
+import com.debate.croll.producer.monitor.sseEmitter.session.Session;
 
 public class OffsetBasedDeltaTransferTestV2 {
 

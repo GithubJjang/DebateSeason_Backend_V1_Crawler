@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.debate.croll.publisher.monitor.sseEmitter.session.Session;
+import com.debate.croll.producer.monitor.sseEmitter.session.Session;
 
 public class SessionContainerV2 {
 

@@ -2,13 +2,11 @@ package com.debate.croll.failover;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Comparator;
 
 import org.junit.jupiter.api.Test;
 
-import com.debate.croll.publisher.crawler.common.DirectoryUrl;
-import com.debate.croll.publisher.crawler.manager.FileManager;
+import com.debate.croll.producer.crawler.common.DirectoryUrl;
+import com.debate.croll.producer.crawler.manager.FileManager;
 
 public class MultiDir {
 
@@ -118,6 +116,7 @@ public class MultiDir {
 	}
 
 	public void findLatestFileName(){
+		/*
 
 		// 1. 최신 Dir 가져오기
 		FileManager fileManager = new FileManager();
@@ -144,6 +143,8 @@ public class MultiDir {
 
 
 		System.out.println("Latest FileName is "+latestFile);
+
+		 */
 	}
 
 }

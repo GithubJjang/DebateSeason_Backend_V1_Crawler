@@ -7,8 +7,7 @@ import java.util.Comparator;
 
 import org.junit.jupiter.api.Test;
 
-import com.debate.croll.publisher.crawler.common.DirectoryUrl;
-import com.debate.croll.publisher.crawler.manager.FileManager;
+import com.debate.croll.producer.crawler.common.DirectoryUrl;
 
 public class SingleDir {
 

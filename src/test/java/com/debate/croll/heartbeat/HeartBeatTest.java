@@ -9,7 +9,7 @@ import java.util.concurrent.Executors;
 import org.junit.jupiter.api.RepeatedTest;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.debate.croll.publisher.monitor.sseEmitter.session.Session;
+import com.debate.croll.producer.monitor.sseEmitter.session.Session;
 
 public class HeartBeatTest {
 

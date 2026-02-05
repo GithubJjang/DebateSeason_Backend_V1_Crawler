@@ -1,21 +1,27 @@
-package com.debate.croll.heartbeat;
+package com.debate.croll.producer.monitor.sseEmitter.session;
 
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.debate.croll.producer.monitor.sseEmitter.session.Session;
+import com.debate.croll.producer.monitor.heartbeat.scheduler.HeartBeatScheduler;
 
-public class SessionContainerV1 {
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-	private final HeartBeatManagerV1 heartBeatManagerV1;
+@Slf4j
+@Getter
+@RequiredArgsConstructor
+@Component
+public class SessionContainer {
 
-	public SessionContainerV1(){
-		heartBeatManagerV1 = new HeartBeatManagerV1();
-	}
+	private final HeartBeatScheduler heartBeatScheduler;
 
-	// 인스턴스에 종속되지 않음.
+	// { userId : SseSession }
+	// 만약 서버가 종료되면, 연결된 모든 사용자 다 끊어짐. 따라서 세션을 유지할 필요가 없다.
+	// static으로 하지 않는다면, isSessionDisconnected가 non-static이 됨. 그런데 이 메소드는 SseHeartbeatSender에서도 써야하는데 순환참조 발생.
 	public final static ConcurrentHashMap<String, Session> sessionContainer
 		= new ConcurrentHashMap<>();
 
@@ -23,14 +29,14 @@ public class SessionContainerV1 {
 
 		// 아무것도 매핑되는 값이 없는 경우에, null을 반환하고, if문으로 중복 생성을 방지.
 		if(sessionContainer.putIfAbsent(userId, session)==null){ // 버킷 단위 락이라서 ok
-			heartBeatManagerV1.increment();
+			heartBeatScheduler.increment();
 		}
 		else{
-			System.out.println("이미 존재하는 세션 : "+userId);
+			log.error("이미 존재하는 세션 : "+userId);
 		}
 	}
 
-
+	// disconnectSession만 static으로 하자. 왜냐하면 SseHeartbeatSender에 주입을 할 경우 순환 참조가 되고, 또 disconnect 때문에 굳이 전체를 DI해서 복잡하게 할 필요가 있나???
 	public static synchronized boolean isSessionDisconnected(String userId){
 
 		// 1. Sse연결을 끊고 ( 이렇게 직접 종료를 하지 않을 경우, 비정상적인 세션 종료에 의한 에러 발생.)
@@ -38,6 +44,7 @@ public class SessionContainerV1 {
 		Session session = sessionContainer.get(userId);
 
 		if(session!=null){ // 세션이 끊어지지 않았다. false
+			log.error("세션이 아직 살아있음 : "+userId);
 			SseEmitter sseEmitter = session.getSseEmitter();
 			sessionContainer.remove(userId); // remove는 MapEntry에서만 제거 -> value가 다른 객체에 참조 되고 있다면, 여전히 메모리 누수가 발생함...
 			sseEmitter.complete(); // 명확하게 세션을 종료해야만 함!. 그리고, null에 대해서 실행을 하면 exception 발생
@@ -50,42 +57,7 @@ public class SessionContainerV1 {
 
 	}
 
-
-	// 결과 반환
-	public int getSessionContainerSize(){ // 컨테이너에 저장된 사용자 수
-		return sessionContainer.size();
+	public static ConcurrentHashMap<String, Session> getSessionContainer(){
+		return sessionContainer;
 	}
-
-	public void findKeys(){
-
-		Set<String> keys = sessionContainer.keySet();
-
-		for(String key : keys){
-			System.out.println("key : "+key);
-		}
-
-	}
-
-	public HeartBeatManagerV1 getHeartBeartManagerV1(){
-		return heartBeatManagerV1;
-	}
-
-	public void clearSessionContainer(){
-		sessionContainer.clear();
-	}
-
-
-	//
-	public int getUserCount(){
-		return heartBeatManagerV1.getUserCount();
-	}
-
-	public int getOperationTime(){
-		return heartBeatManagerV1.getOperationTime();
-	}
-
-	public void shutdownScheduler(){
-		heartBeatManagerV1.shutdownScheduler();
-	}
-
 }
