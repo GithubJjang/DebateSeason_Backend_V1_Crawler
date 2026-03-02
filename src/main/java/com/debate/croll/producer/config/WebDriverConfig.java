@@ -27,6 +27,7 @@ public class WebDriverConfig {
 
 		ChromeOptions options = new ChromeOptions();
 
+		//options.addArguments("--blink-settings=imagesEnabled=false"); 이미지 로딩 비활성화
 		options.addArguments("--headless=new"); // headless 모드
 		options.addArguments("--user-agent=" + userAgent); // 랜덤 User-Agent 설정
 		options.addArguments("--no-sandbox"); // 추가적인 권한 설정

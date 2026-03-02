@@ -1,6 +1,6 @@
 package com.debate.croll.producer.crawler.community.list;
 
-public enum CommunityName {
+public enum Community {
 	BobaeDream,
 	Clien,
 	FmKorea,

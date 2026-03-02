@@ -26,7 +26,7 @@ public class Scheduler {
 	//@Scheduled(initialDelay = 15000,fixedDelay = 86400000)
 	//@Scheduled(cron = "0 0 17 * * ?",zone = "Asia/Seoul")
 	//@Scheduled(cron = "0 18 13 * * ?", zone = "Asia/Seoul")
-	//@Scheduled(fixedDelay = 86400000)
+	@Scheduled(fixedDelay = 86400000)
 	public void crawl(){
 
 		try{
@@ -34,7 +34,7 @@ public class Scheduler {
 			crawlerManager.startCommunityCrawler();
 
 			// 2. 뉴스 크롤링
-			crawlerManager.startNewsCrawler();
+			//crawlerManager.startNewsCrawler();
 
 		}
 		catch (Exception e){

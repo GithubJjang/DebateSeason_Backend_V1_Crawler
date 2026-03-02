@@ -7,17 +7,19 @@ import java.time.temporal.ChronoUnit;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeOptions;
 
 import org.springframework.stereotype.Component;
 
+import com.debate.croll.producer.config.WebDriverFactory;
+import com.debate.croll.producer.config.WebDriverRunner;
+import com.debate.croll.producer.crawler.community.url.CommunityUrlList;
 import com.debate.croll.producer.crawler.type.Type;
 import com.debate.croll.producer.crawler.type.OriginClass;
 import com.debate.croll.producer.entity.Error;
 import com.debate.croll.producer.entity.Media;
 import com.debate.croll.producer.repository.ErrorRepository;
 import com.debate.croll.producer.config.CommunityConfig;
-import com.debate.croll.producer.crawler.community.list.CommunityName;
+import com.debate.croll.producer.crawler.community.list.Community;
 import com.debate.croll.producer.crawler.common.DirectoryUrl;
 
 import com.debate.croll.producer.monitor.FailCounter;
@@ -38,12 +40,13 @@ public class BobaeDream extends AbstractCommunityCrawl {
 	//
 	//private final LoggerMediaRepository loggerMediaRepository;
 	private final MediaRepository mediaRepository;
-	private final ChromeOptions options;
-
-	//
 	private final ErrorRepository errorRepository;
+	private final WebDriverFactory webDriverFactory;
 
-	private final String name = CommunityName.BobaeDream.name();
+
+	// private final ChromeOptions options;
+
+	private final String name = Community.BobaeDream.name();
 	private final String DirUrl = DirectoryUrl.CRAWLER_LOG_BASE_DIR+name;
 	private int start = 1;
 
@@ -56,18 +59,22 @@ public class BobaeDream extends AbstractCommunityCrawl {
 	@Override
 	public void crawl(Status status,int point) throws InterruptedException {
 
-		WebDriver driver = null;
+		// WebDriver 객체 생성
+		WebDriverRunner runner = new WebDriverRunner();
+
+		WebDriver driver = webDriverFactory.getWebDriver();
+		String url = CommunityUrlList.getUrl(name); // readOnly이기 때문에 thread-safe핟.
+
+		runner.run(driver,url);
 
 		// 예기치 못한 장애로 인해서, 리부팅 시 발동되는 조건
 		if(status.name().equals("Reboot")){
 			start = point;
 		}
-
 		try{
-
 			log.info("do crawling ~ ");
-
-			driver = super.setWebDriver(options,"bobaedream"); // 부모 클래스의 기능을 사용한다.
+			// WebDriver driver = null;
+			// driver = super.setWebDriver(options,"bobaedream"); // 부모 클래스의 기능을 사용한다.
 			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
 
 			log.info("find element");
