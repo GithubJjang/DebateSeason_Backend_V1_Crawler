@@ -8,7 +8,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.debate.croll.producer.entity.Error;
+import com.debate.croll.producer.entity.ErrorEntity;
 import com.debate.croll.producer.crawler.manager.ErrorEventProcessor;
 import com.debate.croll.producer.monitor.response.crawler.CrawlerExecutionStats;
 import com.debate.croll.producer.monitor.response.crawler.CrawlerStatusResponse;
@@ -51,12 +51,12 @@ public class SseRepository {
 		int successLogSize = progressLogList.size(); // 진행 로그의 사이즈 = 사용자가 가질 Offset
 
 		// 2. 에러 로그 불러오기 SQLite
-		List<Error> findTodayErrors = errorRepository.findTodayErrors();
-		int errorLogSize = findTodayErrors.size();
+		List<ErrorEntity> findTodayErrorEntities = errorRepository.findTodayErrors();
+		int errorLogSize = findTodayErrorEntities.size();
 
 		// ErrorEvent - > ErrorFormatMapperList로 변환하기
 		List<ErrorFormatMapper> errorFormatMapperList = new ArrayList<>();
-		for(Error e : findTodayErrors){
+		for(ErrorEntity e : findTodayErrorEntities){
 			errorFormatMapperList.add(e.toErrorFormatMapper());
 		}
 
@@ -81,7 +81,7 @@ public class SseRepository {
 
 		// 추가로, 현재 에러 집계
 		ErrorEventProcessor errorEventProcessor = new ErrorEventProcessor();
-		Map<String,Integer> exceptionTypeCountMap =  errorEventProcessor.countExceptionClass(findTodayErrors);
+		Map<String,Integer> exceptionTypeCountMap =  errorEventProcessor.countExceptionClass(findTodayErrorEntities);
 
 		// 5. 응답객체
 		CrawlerStatusResponse crawlerStatusResponse = CrawlerStatusResponse.builder()

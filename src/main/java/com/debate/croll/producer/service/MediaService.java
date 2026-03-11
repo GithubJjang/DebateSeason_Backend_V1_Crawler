@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.debate.croll.producer.entity.Media;
+import com.debate.croll.producer.entity.MediaEntity;
 import com.debate.croll.producer.response.MediaResponse;
 import com.debate.croll.producer.repository.MediaRepository;
 
@@ -21,9 +21,9 @@ public class MediaService {
 	private final MediaRepository mediaRepository;
 
 	// 1. Media 저장
-	public void save(Media media){
+	public void save(MediaEntity mediaEntity){
 
-		mediaRepository.save(media);
+		mediaRepository.save(mediaEntity);
 
 	}
 
@@ -32,15 +32,15 @@ public class MediaService {
 
 
 		// lastId 이후 5건 가져오기. ex) 5 -> 6,7,8,9,10 가져오기
-		List<Media> mediaList = mediaRepository.findMediaAfterId(lastId, limit);
+		List<MediaEntity> mediaEntityList = mediaRepository.findMediaAfterId(lastId, limit);
 
-		if(mediaList!=null){
+		if(mediaEntityList !=null){
 
 			// DTO로 만들기
 			List<MediaResponse> mediaResponseList = new ArrayList<>();
 
 			System.out.println("Send to extractor");
-			for(Media m : mediaList){
+			for(MediaEntity m : mediaEntityList){
 				mediaResponseList.add(m.toModel());
 				System.out.print(m.getId()+" ");
 			}
@@ -61,11 +61,11 @@ public class MediaService {
 	public List<MediaResponse> findMediaAfterLimitOrderByIdAsc(int limit) {
 
 		//Unchecked(0)로 필터링 + PK 오름차순(오래된 순으로) + 5개 가져오기
-		List<Media> mediaList = mediaRepository.findMediaAfterLimitOrderByIdAsc(limit);
+		List<MediaEntity> mediaEntityList = mediaRepository.findMediaAfterLimitOrderByIdAsc(limit);
 
 
 		System.out.println("Send to extractor");
-		for(Media m : mediaList){
+		for(MediaEntity m : mediaEntityList){
 			System.out.print(m.getId()+" ");
 		}
 		System.out.println();
@@ -74,7 +74,7 @@ public class MediaService {
 		// 데이터가 있으면 반환, 없으면 빈 배열 반환
 		List<MediaResponse> mediaResponseList = new ArrayList<>();
 
-		for(Media m : mediaList){
+		for(MediaEntity m : mediaEntityList){
 			mediaResponseList.add(m.toModel());
 		}
 

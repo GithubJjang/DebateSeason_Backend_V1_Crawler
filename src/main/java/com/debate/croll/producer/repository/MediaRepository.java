@@ -7,21 +7,22 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.debate.croll.producer.entity.Media;
+import com.debate.croll.producer.entity.MediaEntity;
+
 @Repository
-public interface MediaRepository extends JpaRepository<Media,Long> {
+public interface MediaRepository extends JpaRepository<MediaEntity,Long> {
 
 	// 1. PK 오름차순(오래된 순으로) + 10개 가져오기
 	@Query(
 		value = """
             SELECT *
-            FROM media
+            FROM mediaEntity
             ORDER BY id ASC
             LIMIT :limit
         """,
 		nativeQuery = true
 	)
-	List<Media> findMediaAfterLimitOrderByIdAsc(
+	List<MediaEntity> findMediaAfterLimitOrderByIdAsc(
 		@Param("limit") int limit
 	);
 
@@ -29,14 +30,14 @@ public interface MediaRepository extends JpaRepository<Media,Long> {
 	@Query(
 		value = """
         SELECT *
-        FROM media
+        FROM mediaEntity
         WHERE id > :lastId
         ORDER BY id ASC
         LIMIT :limit
     """,
 		nativeQuery = true
 	)
-	List<Media> findMediaAfterId(
+	List<MediaEntity> findMediaAfterId(
 		@Param("lastId") long lastId,
 		@Param("limit") int limit
 	);

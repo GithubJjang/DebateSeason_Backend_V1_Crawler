@@ -14,11 +14,14 @@ public class CrawlerBootstrap { // 장애 복구를 하기 위해서, 실행이 
 
 	private final CrawlerRecoveryManager crawlerRecoveryManager;
 
-	//@EventListener(ApplicationReadyEvent.class)
+
+	@EventListener(ApplicationReadyEvent.class)
 	public void recovery(){
 
 		log.info("Crawler Recovery On");
 
-		crawlerRecoveryManager.rebootCrawl();
+		crawlerRecoveryManager.rebootCrawler();
+
+
 	}
 }

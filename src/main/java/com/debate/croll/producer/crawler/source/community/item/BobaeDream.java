@@ -1,0 +1,194 @@
+package com.debate.croll.producer.crawler.source.community.item;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+
+import org.springframework.stereotype.Component;
+
+import com.debate.croll.producer.crawler.source.community.config.CommunityNameList;
+import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
+import com.debate.croll.producer.crawler.source.community.config.CommunityUrlList;
+import com.debate.croll.producer.crawler.request.CheckPointDTO;
+import com.debate.croll.producer.crawler.request.ErrorDTO;
+import com.debate.croll.producer.crawler.request.MediaDTO;
+import com.debate.croll.producer.crawler.service.CrawlerService;
+import com.debate.croll.producer.crawler.service.ErrorService;
+import com.debate.croll.producer.webdriver.WebDriverFactory;
+import com.debate.croll.producer.webdriver.WebDriverRunner;
+import com.debate.croll.producer.crawler.type.Type;
+import com.debate.croll.producer.crawler.type.OriginClass;
+import com.debate.croll.producer.config.CommunityConfig;
+import com.debate.croll.producer.crawler.common.DirectoryUrl;
+
+import com.debate.croll.producer.monitor.FailCounter;
+import com.debate.croll.producer.crawler.common.Status;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@RequiredArgsConstructor
+@Component
+public class BobaeDream extends AbstractCommunitySource {
+
+	private final CrawlerService crawlerService;
+	private final ErrorService errorService;
+
+	private final WebDriverFactory webDriverFactory;
+
+	private final String name = CommunityNameList.BobaeDream.name();
+
+	private int start = 1;
+
+	@Override
+	public String getCommunityName() {
+		return this.name;
+	}
+
+	// 1. 정상적인 작동
+	@Override
+	public void crawl(Status status,int point) throws InterruptedException {
+
+		// WebDriver 객체 생성
+		WebDriverRunner runner = new WebDriverRunner();
+
+		WebDriver driver = webDriverFactory.getWebDriver();
+		String url = CommunityUrlList.getUrl(name); // readOnly이기 때문에 thread-safe핟.
+
+		runner.run(driver,url);
+
+		// 예기치 못한 장애로 인해서, 리부팅 시 발동되는 조건
+		if(status.name().equals(Status.REBOOT.getName())){
+			start = point;
+		}
+		try{
+			log.info("do crawling ~ ");
+			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+
+			log.info("find element");
+			int loop = CommunityConfig.loop;
+
+			for (int i = start; i <= loop; i++) { // 총 5회 실행을 하면서, 매번 필요한 요소를 찾는다.
+				extractElement(driver,i);
+				//Thread.sleep(1500); // bot 의심 피하기
+			}
+
+		}
+		catch (ArrayIndexOutOfBoundsException e1){
+			log.info("다음 커뮤니티로 넘어갑니다.");
+		}
+		catch (Exception e){
+
+			//
+			String[] arr = e.getMessage().split("\\n");
+
+			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+				OriginClass.CRAWLER,
+				Type.DRIVER,
+				name,
+				e.getClass().getName(),
+				arr[0],
+				null,
+				LocalDateTime.now().toString()
+			);
+
+			errorService.save(errorDTO);
+
+			//
+			FailCounter.count();
+
+		}
+		finally {
+
+			if (driver != null) {
+
+				driver.quit();
+				Thread.sleep(3000); // 의도적인 컨텍스트 스위칭 유발로, 다른 스레드 작업 처리를 위한 목적.
+				log.info("successfully shut driver");
+
+			}
+
+		}
+
+	}
+
+	// 가독성을 위해서 분리.
+	@Transactional // 리부팅 시 복구를 위해서, 매 트랜잭션 순간마다 기록을 한다.
+	public void extractElement(WebDriver driver,int i) {
+
+		try{
+
+			WebElement webElement = driver.findElement(
+				By.cssSelector("#boardlist > tbody > tr:nth-child(+" + i + ")"));
+
+			WebElement titleElement = webElement.findElement(By.cssSelector("td.pl14 > a.bsubject"));
+
+			String title = titleElement.getText();
+			String href = titleElement.getAttribute("href");
+
+			String time = webElement.findElement(By.cssSelector("td.date")).getText();
+
+			LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+
+			// 문자열에서 시와 분 파싱
+			int hour = Integer.parseInt(time.split(":")[0]);
+			int minute = Integer.parseInt(time.split(":")[1]);
+
+			// 시:분만 21:42로 덮어쓰기, 초와 나노초는 유지
+			LocalDateTime replaced = now.withHour(hour).withMinute(minute);
+
+			MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
+				title,
+				href,
+				null,
+				"사회",
+				CommunityNameList.BobaeDream.getName(),
+				Type.COMMUNITY.getName(),
+				0,
+				replaced.toString()
+			);
+
+			CheckPointDTO.CreateCheckPointDTO checkPointDTO = new CheckPointDTO.CreateCheckPointDTO(
+				name,
+				null,
+				i,
+				Type.COMMUNITY,
+				LocalDateTime.now().toString(),
+				Status.REBOOT
+			);
+
+			crawlerService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
+
+		} catch (Exception e){
+
+			String[] arr = e.getMessage().split("\\n");
+
+			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+				OriginClass.CRAWLER,
+				Type.COMMUNITY,
+				name,
+				e.getClass().getName(),
+				arr[0],
+				null,
+				LocalDateTime.now().toString()
+			);
+
+			errorService.save(errorDTO);
+
+
+			//
+			FailCounter.count();
+
+			//Sentry.captureException(e);
+		}
+
+	}
+
+}

@@ -5,9 +5,10 @@ import java.time.LocalDateTime;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.debate.croll.producer.entity.Error;
-import com.debate.croll.producer.repository.ErrorRepository;
-import com.debate.croll.producer.crawler.manager.CrawlerManager;
+import com.debate.croll.producer.crawler.request.ErrorDTO;
+import com.debate.croll.producer.crawler.service.CheckPointService;
+import com.debate.croll.producer.crawler.service.ErrorService;
+import com.debate.croll.producer.crawler.manager.CrawlerRunner;
 import com.debate.croll.producer.crawler.type.OriginClass;
 import com.debate.croll.producer.crawler.type.Type;
 import com.debate.croll.producer.monitor.FailCounter;
@@ -20,38 +21,43 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class Scheduler {
 
-	private final CrawlerManager crawlerManager;
-	private final ErrorRepository errorRepository;
+	private final CrawlerRunner crawlerRunner;
+
+	private final CheckPointService checkPointService;
+	private final ErrorService errorService;
 
 	//@Scheduled(initialDelay = 15000,fixedDelay = 86400000)
-	//@Scheduled(cron = "0 0 17 * * ?",zone = "Asia/Seoul")
+	@Scheduled(cron = "0 0 17 * * ?",zone = "Asia/Seoul")
 	//@Scheduled(cron = "0 18 13 * * ?", zone = "Asia/Seoul")
-	@Scheduled(fixedDelay = 86400000)
+	//@Scheduled(fixedDelay = 86400000)
 	public void crawl(){
 
 		try{
 			// 1. 커뮤니티 크롤링
-			crawlerManager.startCommunityCrawler();
+			crawlerRunner.startCommunityCrawler();
 
 			// 2. 뉴스 크롤링
-			//crawlerManager.startNewsCrawler();
+			 crawlerRunner.startNewsCrawler();
+
+			// 3. 마지막 체크포인트 업데이트
+			 checkPointService.updateLastCheckPoint();
 
 		}
 		catch (Exception e){
 
 			String[] arr = e.getMessage().split("\\n");
 
-			Error error = Error.builder()
-				.OriginClass(OriginClass.SCHEDULER)
-				.type(Type.DRIVER)
-				.name(null)
-				.exceptionClass(e.getClass().getName())
-				.message(arr[0])
-				.stackTrace(null)
-				.createdAt(LocalDateTime.now().toString())
-				.build();
+			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+				OriginClass.SCHEDULER,
+				Type.DRIVER,
+				null,
+				e.getClass().getName(),
+				arr[0],
+				null,
+				LocalDateTime.now().toString()
+			);
 
-			errorRepository.save(error);
+			errorService.save(errorDTO);
 
 			//
 			FailCounter.count();

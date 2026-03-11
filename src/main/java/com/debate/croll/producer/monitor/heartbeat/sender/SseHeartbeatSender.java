@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.debate.croll.producer.entity.Error;
+import com.debate.croll.producer.entity.ErrorEntity;
 import com.debate.croll.producer.crawler.manager.ErrorEventProcessor;
 import com.debate.croll.producer.repository.ErrorRepository;
 import com.debate.croll.producer.monitor.FailCounter;
@@ -53,17 +53,17 @@ public class SseHeartbeatSender implements HeartBeatSender { // 어차피 유틸
 			Set<String> userIdSet = sessionContainer.keySet();
 
 			// 3. 지금 에러 + 성공 목록 스냅샷.(기준) -> 성능을 고려해서
-			List<Error> changedTodayErrors; // null로 두면 sse 에러 발생함. 따라서 빈 배열로 두어야 함. 그리고 DB에선 PK로 정렬해서 순서가 일정.
+			List<ErrorEntity> changedTodayErrorEntities; // null로 두면 sse 에러 발생함. 따라서 빈 배열로 두어야 함. 그리고 DB에선 PK로 정렬해서 순서가 일정.
 			List<ProgressLogFormatter> realTimeSuccessLogList = fileManager.extractSuccessFileInfo();
 
 			if(FailCounter.comparePreFailCountToCurrentFailCount()==false){ // 신규 에러가 발생한 상태. 따라서 DB에서 가져온다.
 
-				changedTodayErrors = errorRepository.findTodayErrors();
+				changedTodayErrorEntities = errorRepository.findTodayErrors();
 
 				FailCounter.updatePreFailCount(); // preFailCount를 업데이트한다.
 			}
 			else{
-				changedTodayErrors = new ArrayList<>();
+				changedTodayErrorEntities = new ArrayList<>();
 			}
 
 			//
@@ -81,7 +81,7 @@ public class SseHeartbeatSender implements HeartBeatSender { // 어차피 유틸
 
 				// 각 세션별로 Offset을 이용해서 변경분만 전송을 하자.
 				Map<String,String> dirtyCheckedSuccessLogMap = dirtyCheckingSuccessLog(session,realTimeSuccessLogList); // 어차피 append-only라서 문제 x
-				Map<String,Integer> dirtyCheckedErrorLogMap = dirtyCheckingErrorLog(session,changedTodayErrors); // 에러 로그 집계
+				Map<String,Integer> dirtyCheckedErrorLogMap = dirtyCheckingErrorLog(session, changedTodayErrorEntities); // 에러 로그 집계
 
 				// 전체, 성공, 실패, 진행률 객체
 				CrawlerExecutionStats executionStats = CrawlerExecutionStats.builder()
@@ -148,18 +148,18 @@ public class SseHeartbeatSender implements HeartBeatSender { // 어차피 유틸
 
 	public Map<String,Integer> dirtyCheckingErrorLog(
 		Session session,
-		List<Error> findTodayErrors){
+		List<ErrorEntity> findTodayErrorEntities){
 
 		// 사용자가 가진 errorLog 목록과 방금 저장된 errorLog 목록 비교해서, 변경분만 반환을 해준다.
 
 		int start = session.getErrorLogOffset();
-		int end = findTodayErrors.size();
+		int end = findTodayErrorEntities.size();
 
 		// dirtyPage에 데이터 추가하기.
-		List<Error> dirtyPage = new ArrayList<>();
+		List<ErrorEntity> dirtyPage = new ArrayList<>();
 
 		for(int i=start; i<end; i++){
-			dirtyPage.add(findTodayErrors.get(i));
+			dirtyPage.add(findTodayErrorEntities.get(i));
 		}
 
 		session.setErrorLogOffset(end); // 그리고, Offset을 다음 가져올 포인터로 이동을 시킨다.

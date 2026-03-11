@@ -5,9 +5,9 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import com.debate.croll.producer.entity.Error;
+import com.debate.croll.producer.entity.ErrorEntity;
 
-public interface ErrorRepository extends JpaRepository<Error,Long> {
+public interface ErrorRepository extends JpaRepository<ErrorEntity,Long> {
 
 
 	// @Query(
@@ -29,7 +29,7 @@ public interface ErrorRepository extends JpaRepository<Error,Long> {
     """,
 		nativeQuery = true
 	)
-	List<Error> findTodayErrors(); // 재사용성을 고려하면 이게 훨씬 낫다.
+	List<ErrorEntity> findTodayErrors(); // 재사용성을 고려하면 이게 훨씬 낫다.
 
 	// @Query(
 	// 	value = """
