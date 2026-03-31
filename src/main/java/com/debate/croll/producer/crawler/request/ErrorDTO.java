@@ -1,10 +1,7 @@
 package com.debate.croll.producer.crawler.request;
 
-import java.time.LocalDateTime;
-
-import com.debate.croll.producer.crawler.type.OriginClass;
-import com.debate.croll.producer.crawler.type.Type;
-import com.debate.croll.producer.entity.ErrorEntity;
+import com.debate.croll.producer.crawler.common.OriginClass;
+import com.debate.croll.producer.crawler.common.Type;
 
 public class ErrorDTO {
 
@@ -14,7 +11,7 @@ public class ErrorDTO {
 		String name,
 		String exceptionClassName,
 		String message,
-		String stackTrace,
+		String url,
 		String createdAt
 	){}
 }

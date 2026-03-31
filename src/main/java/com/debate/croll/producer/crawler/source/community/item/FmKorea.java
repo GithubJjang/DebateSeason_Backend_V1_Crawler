@@ -20,13 +20,12 @@ import com.debate.croll.producer.crawler.request.ErrorDTO;
 import com.debate.croll.producer.crawler.request.MediaDTO;
 import com.debate.croll.producer.crawler.service.CrawlerService;
 import com.debate.croll.producer.crawler.service.ErrorService;
-import com.debate.croll.producer.crawler.type.Type;
-import com.debate.croll.producer.webdriver.WebDriverFactory;
-import com.debate.croll.producer.webdriver.WebDriverRunner;
-import com.debate.croll.producer.crawler.type.OriginClass;
-import com.debate.croll.producer.config.CommunityConfig;
-import com.debate.croll.producer.crawler.common.DirectoryUrl;
-import com.debate.croll.producer.monitor.FailCounter;
+import com.debate.croll.producer.crawler.common.Type;
+import com.debate.croll.webdriver.WebDriverFactory;
+import com.debate.croll.webdriver.WebDriverRunner;
+import com.debate.croll.producer.crawler.common.OriginClass;
+import com.debate.croll.producer.crawler.source.community.config.CommunityConfig;
+import com.debate.croll.monitor.FailCounter;
 import com.debate.croll.producer.crawler.common.Status;
 
 import jakarta.transaction.Transactional;
@@ -43,7 +42,6 @@ public class FmKorea extends AbstractCommunitySource {
 	private final ErrorService errorService;
 
 	private final WebDriverFactory webDriverFactory;
-	private LocalDate today;
 
 	private final String name = CommunityNameList.FmKorea.name();
 
@@ -70,27 +68,12 @@ public class FmKorea extends AbstractCommunitySource {
 		}
 
 		try{
-
-			log.info("do crawling ~ ");
-
 			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
 
-			log.info("find element");
-
-			int loop = CommunityConfig.loop;
-
-			// 오늘 YYYY-MM-DD
-			today = LocalDate.now();
-
-			for (int i = start; i <= loop; i++) {
+			for (int i = start; i <= CommunityConfig.COMMUNITY_CRAWL_LIMIT; i++) {
 				extractElement(driver,i);
-				//Thread.sleep(1500); // 의심을 피하기 위한 설정.
-
+				Thread.sleep(1500); // 의심을 피하기 위한 설정.
 			}
-
-		}
-		catch (ArrayIndexOutOfBoundsException e1){
-			log.info("다음 커뮤니티로 넘어갑니다.");
 		}
 		catch (Exception e){
 
@@ -117,18 +100,11 @@ public class FmKorea extends AbstractCommunitySource {
 		finally {
 
 			if (driver != null) {
-
-				today = null; // 크롤링 작업을 끝나고, 날짜를 갱신한다.
-
 				driver.quit();
 				Thread.sleep(3000); // 의도적인 컨텍스트 스위칭 유발로, 다른 스레드 작업 처리를 위한 목적.
 				log.info("successfully shut driver");
 			}
-
 		}
-
-
-
 	}
 
 	@Transactional
@@ -142,7 +118,7 @@ public class FmKorea extends AbstractCommunitySource {
 				"#bd_4180795_0 > div > div.fm_best_widget._bd_pc > ul > li:nth-child(" + i
 					+ ") > div > div:nth-child(5) > span.regdate"));
 
-			String image = null;
+			String src = null;// 이미지
 
 			// 이미지가 null이면 null인 상태로 넘어간다.
 			try {
@@ -150,12 +126,12 @@ public class FmKorea extends AbstractCommunitySource {
 					"#bd_4180795_0 > div > div.fm_best_widget._bd_pc > ul > li:nth-child(" + i
 						+ ") > div > a:nth-child(2) > img"));
 
-				image = imgElement.getAttribute("src");
+				src = imgElement.getAttribute("src");
 			} catch (NoSuchElementException e) {// 이미지가 없는 경우, NoSuchElementException 발생.
 
 			}
 
-			String timeString = today + " " + timeElement.getText();
+			String timeString = LocalDate.now() + " " + timeElement.getText();
 
 			// Create a DateTimeFormatter with the appropriate pattern
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -169,7 +145,7 @@ public class FmKorea extends AbstractCommunitySource {
 			MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
 				title,
 				href,
-				null,
+				src,
 				"정치",
 				CommunityNameList.FmKorea.getName(),
 				Type.COMMUNITY.getName(),

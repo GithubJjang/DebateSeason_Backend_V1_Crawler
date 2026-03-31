@@ -19,13 +19,12 @@ import com.debate.croll.producer.crawler.request.ErrorDTO;
 import com.debate.croll.producer.crawler.request.MediaDTO;
 import com.debate.croll.producer.crawler.service.CrawlerService;
 import com.debate.croll.producer.crawler.service.ErrorService;
-import com.debate.croll.producer.crawler.type.Type;
-import com.debate.croll.producer.webdriver.WebDriverFactory;
-import com.debate.croll.producer.webdriver.WebDriverRunner;
-import com.debate.croll.producer.crawler.type.OriginClass;
-import com.debate.croll.producer.config.CommunityConfig;
-import com.debate.croll.producer.crawler.common.DirectoryUrl;
-import com.debate.croll.producer.monitor.FailCounter;
+import com.debate.croll.producer.crawler.common.Type;
+import com.debate.croll.webdriver.WebDriverFactory;
+import com.debate.croll.webdriver.WebDriverRunner;
+import com.debate.croll.producer.crawler.common.OriginClass;
+import com.debate.croll.producer.crawler.source.community.config.CommunityConfig;
+import com.debate.croll.monitor.FailCounter;
 import com.debate.croll.producer.crawler.common.Status;
 
 import jakarta.transaction.Transactional;
@@ -35,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class Clien extends AbstractCommunitySource {
+public class Clien extends AbstractCommunitySource { // 이미지 없음
 
 
 	private final CrawlerService crawlerService;
@@ -62,30 +61,19 @@ public class Clien extends AbstractCommunitySource {
 
 		runner.run(driver,url);
 
-
 		// 예기치 못한 장애로 인해서, 리부팅 시 발동되는 조건
 		if(status.name().equals(Status.REBOOT.getName())){
 			start = point;
 		}
 
 		try{
-
-			log.info("do crawling ~ ");
-
 			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
 
-			log.info("find element");
-
-			int loop = CommunityConfig.loop;
-
-			for (int i = start; i <= loop; i++) {
+			for (int i = start; i <= CommunityConfig.COMMUNITY_CRAWL_LIMIT; i++) {
 				extractElement(driver,i);
-				//Thread.sleep(1500); // 의심을 피하기 위한 설정.
+				Thread.sleep(1500); // 의심을 피하기 위한 설정.
 			}
 
-		}
-		catch (ArrayIndexOutOfBoundsException e1){
-			log.info("다음 커뮤니티로 넘어갑니다.");
 		}
 		catch (Exception e){
 

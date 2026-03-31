@@ -18,13 +18,12 @@ import com.debate.croll.producer.crawler.request.ErrorDTO;
 import com.debate.croll.producer.crawler.request.MediaDTO;
 import com.debate.croll.producer.crawler.service.CrawlerService;
 import com.debate.croll.producer.crawler.service.ErrorService;
-import com.debate.croll.producer.crawler.type.Type;
-import com.debate.croll.producer.webdriver.WebDriverFactory;
-import com.debate.croll.producer.webdriver.WebDriverRunner;
-import com.debate.croll.producer.crawler.type.OriginClass;
-import com.debate.croll.producer.config.CommunityConfig;
-import com.debate.croll.producer.crawler.common.DirectoryUrl;
-import com.debate.croll.producer.monitor.FailCounter;
+import com.debate.croll.producer.crawler.common.Type;
+import com.debate.croll.webdriver.WebDriverFactory;
+import com.debate.croll.webdriver.WebDriverRunner;
+import com.debate.croll.producer.crawler.common.OriginClass;
+import com.debate.croll.producer.crawler.source.community.config.CommunityConfig;
+import com.debate.croll.monitor.FailCounter;
 import com.debate.croll.producer.crawler.common.Status;
 
 import jakarta.transaction.Transactional;
@@ -65,24 +64,11 @@ public class TodayHumor extends AbstractCommunitySource { // 에러발생
 		}
 
 		try{
-
-			log.info("do crawling ~ ");
-
 			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-
-			log.info("find element");
-
-			int loop = CommunityConfig.loop;
-
-			for (int i = start; i < 2 + loop; i++) {
+			for (int i = start; i < 2 + CommunityConfig.COMMUNITY_CRAWL_LIMIT; i++) {
 				extractElement(driver,i);
-				//Thread.sleep(1500); // 의심을 피하기 위한 설정.
-
+				Thread.sleep(1500); // 의심을 피하기 위한 설정.
 			}
-
-		}
-		catch (ArrayIndexOutOfBoundsException e1){
-			log.info("다음 커뮤니티로 넘어갑니다.");
 		}
 		catch (Exception e){
 
@@ -135,8 +121,6 @@ public class TodayHumor extends AbstractCommunitySource { // 에러발생
 			WebElement hrefElement = webElement.findElement(By.cssSelector("td.subject > a"));
 			String title = hrefElement.getText();
 			String href = hrefElement.getAttribute("href");
-
-			String img = null; // 이미지 null 처리
 
 			// 25/05/06, 16:08 -> 25-05-06 16:08
 			String dateElement = webElement.findElement(By.cssSelector("td.date")).getText();

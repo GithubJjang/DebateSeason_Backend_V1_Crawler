@@ -1,7 +1,7 @@
 package com.debate.croll.producer.crawler.mapper.checkpoint;
 
 import com.debate.croll.producer.crawler.common.Status;
-import com.debate.croll.producer.crawler.type.Type;
+import com.debate.croll.producer.crawler.common.Type;
 
 public interface CheckPointProjection { // CheckPoint테이블에서 필요한 것만 가져온다.
 

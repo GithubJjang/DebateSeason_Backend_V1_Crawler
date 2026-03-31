@@ -11,7 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.debate.croll.producer.crawler.service.CrawlerService;
 import com.debate.croll.producer.crawler.service.ErrorService;
-import com.debate.croll.producer.webdriver.WebDriverFactory;
+import com.debate.croll.webdriver.WebDriverFactory;
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.producer.crawler.source.community.config.CommunityNameList;
 import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;

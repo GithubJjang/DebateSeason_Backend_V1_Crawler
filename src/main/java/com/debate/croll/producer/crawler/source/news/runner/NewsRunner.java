@@ -14,12 +14,12 @@ import com.debate.croll.producer.crawler.request.ErrorDTO;
 import com.debate.croll.producer.crawler.request.MediaDTO;
 import com.debate.croll.producer.crawler.service.CrawlerService;
 import com.debate.croll.producer.crawler.service.ErrorService;
-import com.debate.croll.producer.crawler.type.OriginClass;
-import com.debate.croll.producer.crawler.type.Type;
-import com.debate.croll.producer.monitor.FailCounter;
+import com.debate.croll.producer.crawler.common.OriginClass;
+import com.debate.croll.producer.crawler.common.Type;
+import com.debate.croll.monitor.FailCounter;
 import com.debate.croll.producer.crawler.common.Status;
-import com.debate.croll.producer.webdriver.WebDriverFactory;
-import com.debate.croll.producer.webdriver.WebDriverRunner;
+import com.debate.croll.webdriver.WebDriverFactory;
+import com.debate.croll.webdriver.WebDriverRunner;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -112,14 +112,14 @@ public class NewsRunner {
 			String title = titleElement.getText();
 
 			// 3. img
-			String image;
+			String src;
 			try {
 				WebElement imgElement = driver.findElement(By.cssSelector(
 					"#ct > div._tab_panel > div:nth-child(1) > ul > li:nth-child(" + childIndex
 						+ ") > a.press_edit_news_link._es_pc_link > span.press_edit_news_thumb > img"));
-				image = imgElement.getAttribute("src");
+				src = imgElement.getAttribute("src");
 			} catch (NoSuchElementException e) { // 없으면 image는 null이다.
-				image = null;
+				src = null;
 			}
 
 			// 4. time
@@ -163,7 +163,7 @@ public class NewsRunner {
 			MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
 				title,
 				href,
-				image,
+				src,
 				categoryName,
 				name,
 				Type.NEWS.getName(),

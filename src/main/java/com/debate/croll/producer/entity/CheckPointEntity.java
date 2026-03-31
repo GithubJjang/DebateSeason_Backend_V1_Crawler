@@ -3,7 +3,7 @@ package com.debate.croll.producer.entity;
 import org.springframework.data.annotation.CreatedDate;
 
 import com.debate.croll.producer.crawler.common.Status;
-import com.debate.croll.producer.crawler.type.Type;
+import com.debate.croll.producer.crawler.common.Type;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

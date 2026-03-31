@@ -2,9 +2,9 @@ package com.debate.croll.producer.entity;
 
 import org.springframework.data.annotation.CreatedDate;
 
-import com.debate.croll.producer.crawler.type.OriginClass;
-import com.debate.croll.producer.crawler.type.Type;
-import com.debate.croll.producer.monitor.response.error.ErrorFormatMapper;
+import com.debate.croll.producer.crawler.common.OriginClass;
+import com.debate.croll.producer.crawler.common.Type;
+import com.debate.croll.monitor.response.error.ErrorFormatMapper;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -42,20 +42,14 @@ public class ErrorEntity {
 	@Column(name = "name")
 	private String name;
 
-	@Column(name = "tag1")
-	private Integer tag1;
-
-	@Column(name = "tag2")
-	private Integer tag2;
-
 	@Column(name = "exception_class")
 	private String exceptionClass; // 예외 클래스.
 
 	@Column(name = "message") // 에러 메시지.
 	private String message;
 
-	@Column(name = "stacktrace")
-	private String stackTrace;
+	@Column(name = "url")
+	private String url; // 주소
 
 	@CreatedDate
 	@Column(name = "created_at", updatable = false, columnDefinition = "TEXT")

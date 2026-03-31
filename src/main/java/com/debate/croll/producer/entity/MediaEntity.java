@@ -2,7 +2,7 @@ package com.debate.croll.producer.entity;
 
 import org.springframework.data.annotation.CreatedDate;
 
-import com.debate.croll.producer.response.MediaResponse;
+import com.debate.croll.producer.domain.Media;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -55,9 +55,9 @@ public class MediaEntity {
 	@Column(name = "created_at", updatable = false, columnDefinition = "TEXT")
 	private String createdAt; // 생성일. SQLite는 날짜 타입이 없어서 -> TEXT로 저장
 
-	public MediaResponse toModel(){
+	public Media toModel(){
 
-		return MediaResponse.builder()
+		return Media.builder()
 			.id(id)
 			.title(title)
 			.url(url)

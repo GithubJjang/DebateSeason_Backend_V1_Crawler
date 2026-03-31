@@ -6,7 +6,7 @@ import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
 import com.debate.croll.producer.crawler.common.DirectoryUrl;
-import com.debate.croll.producer.crawler.manager.FileManager;
+import com.debate.croll.monitor.manager.FileManager;
 
 public class MultiDir {
 

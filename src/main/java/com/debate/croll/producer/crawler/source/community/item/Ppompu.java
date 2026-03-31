@@ -3,10 +3,8 @@ package com.debate.croll.producer.crawler.source.community.item;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
@@ -18,15 +16,13 @@ import com.debate.croll.producer.crawler.request.ErrorDTO;
 import com.debate.croll.producer.crawler.request.MediaDTO;
 import com.debate.croll.producer.crawler.service.CrawlerService;
 import com.debate.croll.producer.crawler.service.ErrorService;
-import com.debate.croll.producer.crawler.type.Type;
-import com.debate.croll.producer.webdriver.WebDriverFactory;
-import com.debate.croll.producer.webdriver.WebDriverRunner;
-import com.debate.croll.producer.crawler.type.OriginClass;
-import com.debate.croll.producer.config.CommunityConfig;
+import com.debate.croll.producer.crawler.common.Type;
+import com.debate.croll.webdriver.WebDriverFactory;
+import com.debate.croll.webdriver.WebDriverRunner;
+import com.debate.croll.producer.crawler.common.OriginClass;
+import com.debate.croll.producer.crawler.source.community.config.CommunityConfig;
 import com.debate.croll.producer.crawler.source.community.config.CommunityNameList;
-import com.debate.croll.producer.crawler.common.DirectoryUrl;
-import com.debate.croll.producer.entity.MediaEntity;
-import com.debate.croll.producer.monitor.FailCounter;
+import com.debate.croll.monitor.FailCounter;
 import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.common.Status;
 
@@ -69,23 +65,11 @@ public class Ppompu extends AbstractCommunitySource {
 		}
 
 		try{
-
-			log.info("do crawling ~ ");
-
 			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-
-			log.info("find element");
-
-			int loop = CommunityConfig.loop;
-
-			for(int i=start; i<4+loop; i++){
+			for(int i=start; i<4+CommunityConfig.COMMUNITY_CRAWL_LIMIT; i++){
 				extractElement(driver,i);
-				//Thread.sleep(1000);
+				Thread.sleep(1500);
 			}
-
-		}
-		catch (ArrayIndexOutOfBoundsException e1){
-			log.info("다음 커뮤니티로 넘어갑니다.");
 		}
 		catch (Exception e){
 
@@ -133,8 +117,16 @@ public class Ppompu extends AbstractCommunitySource {
 			//#revolution_main_table > tbody > tr:nth-child(11) > td:nth-child(2) > img.baseList-img
 			WebElement e = driver.findElement(By.cssSelector("body > div.wrapper > div.contents > div.container > div > div.board_box > table > tbody > tr:nth-child("+i+")"));
 
-			//WebElement imageElement = e.findElement(By.cssSelector("td.baseList-space.title > a > img"));
-			//String image = imageElement.getAttribute("src") != null ? imageElement.getAttribute("src") : null;
+			// 이미지 주소 추출하기
+			String src = null;
+			try{
+				WebElement imageElement = e.findElement(By.cssSelector("td.baseList-space.title > a > img"));
+				src = imageElement.getAttribute("src") != null ? imageElement.getAttribute("src") : null;
+			}
+			catch (NoSuchElementException exception){
+
+			}
+
 
 			String href = e.findElement(By.cssSelector("td.baseList-space.title > a")).getAttribute("href");
 
@@ -160,7 +152,7 @@ public class Ppompu extends AbstractCommunitySource {
 			MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
 				title,
 				href,
-				null,
+				src,
 				"정치",
 				CommunityNameList.Ppompu.getName(),
 				Type.COMMUNITY.getName(),

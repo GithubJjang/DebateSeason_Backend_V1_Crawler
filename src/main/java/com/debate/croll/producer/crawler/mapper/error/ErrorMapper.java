@@ -13,7 +13,7 @@ public class ErrorMapper {
 			.name(dto.name())
 			.exceptionClass(dto.exceptionClassName())
 			.message(dto.message())
-			.stackTrace(dto.stackTrace())
+			.url(dto.url())
 			.createdAt(dto.createdAt())
 			.build();
 	}

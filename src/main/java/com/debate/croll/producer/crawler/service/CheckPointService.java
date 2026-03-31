@@ -1,13 +1,11 @@
 package com.debate.croll.producer.crawler.service;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.producer.crawler.mapper.checkpoint.CheckPointProjection;
-import com.debate.croll.producer.crawler.type.Type;
 import com.debate.croll.producer.entity.CheckPointEntity;
 import com.debate.croll.producer.repository.CheckPointRepository;
 
@@ -29,7 +27,7 @@ public class CheckPointService {
 	@Transactional
 	public void updateLastCheckPoint() { // 마지막 체크포인트를 기록한다.
 
-		if (checkPointRepository.existsByStatus(Status.DONE) == false) { //만약 없다면, 새로 체크포인트를 기록한다.
+		if (!checkPointRepository.existsByStatus(Status.DONE)) { //만약 없다면, 새로 체크포인트를 기록한다.
 
 			// 없으면 새로 체크포인트를 생성한다
 			CheckPointEntity lastCheckPointEntity = CheckPointEntity.builder()
@@ -47,7 +45,7 @@ public class CheckPointService {
 			// 이미 있다면, 날짜면 갱신을 한다.
 			checkPointRepository.updateLastCheckPointOnly(
 				LocalDateTime.now().toString(), // 날짜 갱신
-				Status.DONE // DONE만 업데이트
+				Status.DONE.getName() // DONE만 업데이트
 			);
 
 		}

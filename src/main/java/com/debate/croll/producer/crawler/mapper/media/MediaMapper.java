@@ -11,7 +11,7 @@ public class MediaMapper {
 		return MediaEntity.builder()
 			.title(dto.title())
 			.url(dto.url())
-			.src(null)
+			.src(dto.src())
 			.category(dto.category())
 			.media(dto.media())
 			.type(dto.type())

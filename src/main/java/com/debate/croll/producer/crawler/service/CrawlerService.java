@@ -8,7 +8,7 @@ import com.debate.croll.producer.crawler.mapper.checkpoint.CheckPointMapper;
 import com.debate.croll.producer.crawler.mapper.media.MediaMapper;
 import com.debate.croll.producer.crawler.request.CheckPointDTO;
 import com.debate.croll.producer.crawler.request.MediaDTO;
-import com.debate.croll.producer.crawler.type.Type;
+import com.debate.croll.producer.crawler.common.Type;
 import com.debate.croll.producer.entity.CheckPointEntity;
 import com.debate.croll.producer.entity.MediaEntity;
 import com.debate.croll.producer.repository.CheckPointRepository;
@@ -43,32 +43,25 @@ public class CrawlerService {
 
 			case COMMUNITY -> {
 
-				if(checkPointRepository.existsByNameAndCrawlIndex(name,index)==false){ // 로그가 없다면 <- 엔티티 조회가 아니므로, 영속성 컨텍스트 등록이 안됨
-
+				if(!checkPointRepository.existsByNameAndCrawlIndex(name, index)){ // 로그가 없다면 <- 엔티티 조회가 아니므로, 영속성 컨텍스트 등록이 안됨
 					CheckPointEntity checkPointEntity = CheckPointMapper.toEntity(checkPointDTO);
 					checkPointRepository.save(checkPointEntity);
 				}
 				else{ // 로그가 있다면, updated_at만 수정을 한다. -> 영속성 컨텍스트 등록없이 바로 DB에 등록
-
-					String updatedAt = checkPointDTO.updatedAt();
 					log.info("successfully updated!");
+					String updatedAt = checkPointDTO.updatedAt();
 					checkPointRepository.updateCheckPoint(updatedAt,name,subKey,index);
 				}
 
 			}
 			case NEWS -> {
 
-				System.out.println("subKey is "+ subKey);
-
-				if(checkPointRepository.existsByNameAndSubKeyAndCrawlIndex(name,subKey,index)==false){ // 로그가 없다면 <- 엔티티 조회가 아니므로, 영속성 컨텍스트 등록이 안됨
-
+				if(!checkPointRepository.existsByNameAndSubKeyAndCrawlIndex(name, subKey, index)){ // 로그가 없다면 <- 엔티티 조회가 아니므로, 영속성 컨텍스트 등록이 안됨
 					CheckPointEntity checkPointEntity = CheckPointMapper.toEntity(checkPointDTO);
 					checkPointRepository.save(checkPointEntity);
 				}
-				else{ // 로그가 있다면, updated_at만 수정을 한다. -> 영속성 컨텍스트 등록없이 바로 DB에 등록
-
+				else{
 					String updatedAt = checkPointDTO.updatedAt();
-					log.info("successfully updated!");
 					checkPointRepository.updateCheckPoint(updatedAt,name,subKey,index);
 				}
 
@@ -78,8 +71,6 @@ public class CrawlerService {
 				throw new NoSuchElementException("There is no "+type.name());
 
 		}
-
-
 
 	}
 

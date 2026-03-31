@@ -60,5 +60,5 @@ public interface CheckPointRepository extends JpaRepository<CheckPointEntity,Lon
 		nativeQuery = true
 	)
 	void updateLastCheckPointOnly(@Param("updatedAt") String updatedAt,
-		@Param("status") Status status);
+		@Param("status") String status);
 }

@@ -16,7 +16,7 @@ public interface MediaRepository extends JpaRepository<MediaEntity,Long> {
 	@Query(
 		value = """
             SELECT *
-            FROM mediaEntity
+            FROM media
             ORDER BY id ASC
             LIMIT :limit
         """,
@@ -30,7 +30,7 @@ public interface MediaRepository extends JpaRepository<MediaEntity,Long> {
 	@Query(
 		value = """
         SELECT *
-        FROM mediaEntity
+        FROM media
         WHERE id > :lastId
         ORDER BY id ASC
         LIMIT :limit

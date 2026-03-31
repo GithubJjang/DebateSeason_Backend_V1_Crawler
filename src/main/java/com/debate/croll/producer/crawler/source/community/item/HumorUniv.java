@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
@@ -16,15 +17,14 @@ import com.debate.croll.producer.crawler.request.ErrorDTO;
 import com.debate.croll.producer.crawler.request.MediaDTO;
 import com.debate.croll.producer.crawler.service.CrawlerService;
 import com.debate.croll.producer.crawler.service.ErrorService;
-import com.debate.croll.producer.crawler.type.Type;
-import com.debate.croll.producer.webdriver.WebDriverFactory;
-import com.debate.croll.producer.webdriver.WebDriverRunner;
+import com.debate.croll.producer.crawler.common.Type;
+import com.debate.croll.webdriver.WebDriverFactory;
+import com.debate.croll.webdriver.WebDriverRunner;
 import com.debate.croll.producer.crawler.source.community.config.CommunityUrlList;
-import com.debate.croll.producer.crawler.type.OriginClass;
-import com.debate.croll.producer.config.CommunityConfig;
+import com.debate.croll.producer.crawler.common.OriginClass;
+import com.debate.croll.producer.crawler.source.community.config.CommunityConfig;
 import com.debate.croll.producer.crawler.source.community.config.CommunityNameList;
-import com.debate.croll.producer.crawler.common.DirectoryUrl;
-import com.debate.croll.producer.monitor.FailCounter;
+import com.debate.croll.monitor.FailCounter;
 import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.common.Status;
 
@@ -68,24 +68,11 @@ public class HumorUniv extends AbstractCommunitySource {
 		}
 
 		try{
-
-			log.info("do crawling ~ ");
-
 			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(20));
-
-			log.info("find element");
-
-			int loop = CommunityConfig.loop;
-
-			for (int i = start; i < loop; i++) {
+			for (int i = start; i < CommunityConfig.COMMUNITY_CRAWL_LIMIT; i++) {
 				extractElement(driver,i);
-				//Thread.sleep(1500); // 의심을 피하기 위한 설정.
-
+				Thread.sleep(1500); // 의심을 피하기 위한 설정.
 			}
-
-		}
-		catch (ArrayIndexOutOfBoundsException e1){
-			log.info("다음 커뮤니티로 넘어갑니다.");
 		}
 		catch (Exception e){
 
@@ -135,12 +122,21 @@ public class HumorUniv extends AbstractCommunitySource {
 			String id = idElement.getAttribute("id");
 
 			String numberOnly = id.replaceAll("[^0-9]", ""); // 숫자가 아닌 문자를 모두 제거
-
-			String image = driver.findElement(
-					By.cssSelector("#" + id + "> table > tbody > tr > td:nth-child(1) > div > img"))
-				.getAttribute("src");
 			String title = driver.findElement(By.cssSelector("#title_chk_pds-" + numberOnly)).getText();
 			//#title_chk_pds-1366802
+
+			String src = null;//이미지
+			try{
+				src = driver.findElement(
+						By.cssSelector("#" + id + "> table > tbody > tr > td:nth-child(1) > div > img"))
+						.getAttribute("src");
+			}
+			catch (NoSuchElementException e){
+
+			}
+
+
+
 
 			String time = driver.findElement(
 				By.cssSelector("#" + id + "> table > tbody > tr > td:nth-child(2) > div > span.extra")).getText();
@@ -167,7 +163,7 @@ public class HumorUniv extends AbstractCommunitySource {
 			MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
 				title,
 				href,
-				null,
+				src,
 				"정치",
 				CommunityNameList.HumorUniv.getName(),
 				Type.COMMUNITY.getName(),

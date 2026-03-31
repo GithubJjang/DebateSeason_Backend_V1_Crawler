@@ -9,8 +9,8 @@ import org.springframework.stereotype.Component;
 
 import com.debate.croll.producer.crawler.mapper.checkpoint.CheckPointProjection;
 import com.debate.croll.producer.crawler.source.community.config.CommunitySourceList;
-import com.debate.croll.producer.crawler.type.OriginClass;
-import com.debate.croll.producer.crawler.type.Type;
+import com.debate.croll.producer.crawler.common.OriginClass;
+import com.debate.croll.producer.crawler.common.Type;
 import com.debate.croll.producer.entity.ErrorEntity;
 import com.debate.croll.producer.repository.ErrorRepository;
 import com.debate.croll.producer.crawler.common.Status;
@@ -58,12 +58,11 @@ public class CrawlerRunner {
 			String[] arr = e.getMessage().split("\\n");
 
 			ErrorEntity errorEntity = ErrorEntity.builder()
-				.OriginClass(OriginClass.CRAWLER_MANAGER)
+				.OriginClass(OriginClass.CRAWLER_RUNNER)
 				.type(Type.COMMUNITY)
 				.name(null)
 				.exceptionClass(e.getClass().getName())
 				.message(arr[0])
-				.stackTrace(null)
 				.createdAt(LocalDateTime.now().toString())
 				.build();
 
@@ -150,12 +149,11 @@ public class CrawlerRunner {
 			String[] arr = e.getMessage().split("\\n");
 
 			ErrorEntity errorEntity = ErrorEntity.builder()
-				.OriginClass(OriginClass.CRAWLER_MANAGER)
+				.OriginClass(OriginClass.CRAWLER_RUNNER)
 				.type(Type.NEWS)
 				.name(null)
 				.exceptionClass(e.getClass().getName())
 				.message(arr[0])
-				.stackTrace(null)
 				.createdAt(LocalDateTime.now().toString())
 				.build();
 
@@ -168,12 +166,11 @@ public class CrawlerRunner {
 			String[] arr = unexpectedException.getMessage().split("\\n");
 
 			ErrorEntity errorEntity = ErrorEntity.builder()
-				.OriginClass(OriginClass.CRAWLER_MANAGER)
+				.OriginClass(OriginClass.CRAWLER_RUNNER)
 				.type(Type.NEWS)
 				.name(null)
 				.exceptionClass(unexpectedException.getClass().getName())
 				.message(arr[0])
-				.stackTrace(null)
 				.createdAt(LocalDateTime.now().toString())
 				.build();
 
