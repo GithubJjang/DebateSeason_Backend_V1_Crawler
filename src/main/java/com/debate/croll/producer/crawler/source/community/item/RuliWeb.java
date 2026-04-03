@@ -15,8 +15,8 @@ import org.springframework.stereotype.Component;
 import com.debate.croll.producer.crawler.dto.CheckPointDTO;
 import com.debate.croll.producer.crawler.dto.ErrorDTO;
 import com.debate.croll.producer.crawler.dto.MediaDTO;
-import com.debate.croll.producer.service.CrawlerApplicationService;
-import com.debate.croll.producer.service.ErrorService;
+import com.debate.croll.infrastructure.service.CrawlerApplicationService;
+import com.debate.croll.infrastructure.service.ErrorService;
 import com.debate.croll.producer.crawler.common.Type;
 import com.debate.croll.webdriver.WebDriverFactory;
 import com.debate.croll.webdriver.WebDriverRunner;
@@ -24,7 +24,6 @@ import com.debate.croll.producer.crawler.source.community.config.CommunityUrlLis
 import com.debate.croll.producer.crawler.common.OriginClass;
 import com.debate.croll.producer.crawler.source.community.config.CommunityConfig;
 import com.debate.croll.producer.crawler.source.community.config.CommunityNameList;
-import com.debate.croll.monitor.util.FailCounter;
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
 
@@ -89,9 +88,6 @@ public class RuliWeb extends AbstractCommunitySource {
 			);
 
 			errorService.save(errorDTO);
-
-			//
-			FailCounter.count();
 
 			//Sentry.captureException(e);
 
@@ -185,9 +181,6 @@ public class RuliWeb extends AbstractCommunitySource {
 			);
 
 			errorService.save(errorDTO);
-
-			//
-			FailCounter.count();
 
 			//Sentry.captureException(e);
 

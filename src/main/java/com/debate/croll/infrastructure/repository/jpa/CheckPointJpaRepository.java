@@ -1,4 +1,4 @@
-package com.debate.croll.producer.repository;
+package com.debate.croll.infrastructure.repository.jpa;
 
 import java.util.Optional;
 

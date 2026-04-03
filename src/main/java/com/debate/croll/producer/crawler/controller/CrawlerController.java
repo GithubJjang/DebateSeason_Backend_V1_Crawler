@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.debate.croll.producer.common.ApiResponse;
 import com.debate.croll.producer.crawler.dto.response.MediaRawResponse;
-import com.debate.croll.producer.service.MediaService;
+import com.debate.croll.infrastructure.service.MediaService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

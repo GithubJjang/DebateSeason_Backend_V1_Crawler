@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.producer.crawler.mapper.checkpoint.CheckPointProjection;
-import com.debate.croll.producer.service.CheckPointService;
+import com.debate.croll.infrastructure.service.CheckPointService;
 import com.debate.croll.producer.crawler.common.Type;
 
 import lombok.RequiredArgsConstructor;

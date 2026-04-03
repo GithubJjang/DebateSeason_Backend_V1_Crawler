@@ -2,8 +2,6 @@ package com.debate.croll.producer.entity;
 
 import org.springframework.data.annotation.CreatedDate;
 
-import com.debate.croll.producer.domain.Media;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -54,21 +52,5 @@ public class MediaEntity {
 	@CreatedDate
 	@Column(name = "created_at", updatable = false, columnDefinition = "TEXT")
 	private String createdAt; // 생성일. SQLite는 날짜 타입이 없어서 -> TEXT로 저장
-
-	public Media toModel(){
-
-		return Media.builder()
-			.id(id)
-			.title(title)
-			.url(url)
-			.src(src)
-			.category(category)
-			.media(media)
-			.type(type)
-			.count(count)
-			.createdAt(createdAt)
-			.build();
-
-	}
 
 }

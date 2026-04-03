@@ -12,11 +12,10 @@ import org.springframework.stereotype.Component;
 import com.debate.croll.producer.crawler.dto.CheckPointDTO;
 import com.debate.croll.producer.crawler.dto.ErrorDTO;
 import com.debate.croll.producer.crawler.dto.MediaDTO;
-import com.debate.croll.producer.service.CrawlerApplicationService;
-import com.debate.croll.producer.service.ErrorService;
+import com.debate.croll.infrastructure.service.CrawlerApplicationService;
+import com.debate.croll.infrastructure.service.ErrorService;
 import com.debate.croll.producer.crawler.common.OriginClass;
 import com.debate.croll.producer.crawler.common.Type;
-import com.debate.croll.monitor.util.FailCounter;
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.webdriver.WebDriverFactory;
 import com.debate.croll.webdriver.WebDriverRunner;
@@ -73,9 +72,6 @@ public class NewsRunner {
 			);
 
 			errorService.save(errorDTO);
-
-			//
-			FailCounter.count();
 
 		}
 		finally {
@@ -199,9 +195,6 @@ public class NewsRunner {
 			);
 
 			errorService.save(errorDTO);
-
-
-			FailCounter.count();
 
 		}
 

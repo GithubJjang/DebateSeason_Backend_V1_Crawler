@@ -1,4 +1,4 @@
-package com.debate.croll.producer.service;
+package com.debate.croll.infrastructure.service;
 
 
 import java.util.ArrayList;
@@ -6,12 +6,13 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.debate.croll.domain.MediaRepository;
 import com.debate.croll.producer.common.ApiResponse;
 import com.debate.croll.producer.crawler.dto.response.MediaRawResponse;
 import com.debate.croll.producer.common.Status;
 import com.debate.croll.producer.crawler.dto.response.factory.MediaResponseFactory;
 import com.debate.croll.producer.entity.MediaEntity;
-import com.debate.croll.producer.repository.MediaJpaRepository;
+import com.debate.croll.infrastructure.repository.jpa.MediaJpaRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,12 +22,12 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class MediaService {
 
-	private final MediaJpaRepository mediaJpaRepository;
+	private final MediaRepository mediaRepository;
 
 	// 1. Media 저장
 	public void save(MediaEntity mediaEntity){
 
-		mediaJpaRepository.save(mediaEntity);
+		mediaRepository.save(mediaEntity);
 
 	}
 
@@ -36,7 +37,7 @@ public class MediaService {
 		MediaResponseFactory factory = new MediaResponseFactory();
 
 		// lastId 이후 5건 가져오기. ex) 5 -> 6,7,8,9,10 가져오기
-		List<MediaEntity> mediaEntityList = mediaJpaRepository.findMediaAfterId(lastId, limit);
+		List<MediaEntity> mediaEntityList = mediaRepository.findMediaAfterId(lastId, limit);
 
 		if(mediaEntityList!=null){
 
@@ -69,7 +70,7 @@ public class MediaService {
 		MediaResponseFactory factory = new MediaResponseFactory();
 
 		//Unchecked(0)로 필터링 + PK 오름차순(오래된 순으로) + 5개 가져오기
-		List<MediaEntity> mediaEntityList = mediaJpaRepository.findMediaAfterLimitOrderByIdAsc(limit);
+		List<MediaEntity> mediaEntityList = mediaRepository.findMediaAfterLimitOrderByIdAsc(limit);
 
 		// 데이터가 있으면 반환, 없으면 빈 배열 반환
 		List<MediaRawResponse> mediaRawResponseList = new ArrayList<>();

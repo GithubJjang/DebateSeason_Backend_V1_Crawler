@@ -1,12 +1,14 @@
-package com.debate.croll.producer.repository;
+package com.debate.croll.infrastructure.repository.jpa;
 
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 
 import com.debate.croll.producer.entity.ErrorEntity;
 
+@Repository
 public interface ErrorJpaRepository extends JpaRepository<ErrorEntity,Long> {
 
 	// 1. 오늘 에러 목록들 불러오기.
@@ -33,9 +35,6 @@ public interface ErrorJpaRepository extends JpaRepository<ErrorEntity,Long> {
 		nativeQuery = true
 	)
 	Long countTodayErrors(); // 재사용성을 고려하면 이게 훨씬 낫다.
-
-	// 3. 에러 발생 건수 증분으로 가져오기
-	List<ErrorEntity> findByIdGreaterThan(Integer id);
 
 }
 

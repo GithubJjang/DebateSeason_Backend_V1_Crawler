@@ -10,12 +10,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import com.debate.croll.domain.CheckPointRepository;
+import com.debate.croll.domain.ErrorRepository;
 import com.debate.croll.monitor.manager.ErrorEventManager;
 import com.debate.croll.monitor.mapper.error.ErrorDTOFactory;
 import com.debate.croll.monitor.mapper.error.ErrorDTO;
 
-import com.debate.croll.producer.repository.CheckPointJpaRepository;
-import com.debate.croll.producer.repository.ErrorJpaRepository;
+import com.debate.croll.infrastructure.repository.jpa.CheckPointJpaRepository;
+import com.debate.croll.infrastructure.repository.jpa.ErrorJpaRepository;
 
 import com.debate.croll.monitor.heartbeat.scheduler.HeartBeatScheduler;
 import com.debate.croll.monitor.heartbeat.sender.template.HeartBeatSender;
@@ -34,8 +36,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class SseHeartbeatSender implements HeartBeatSender { // 어차피 유틸리티 클래스인데, 매번 새로 생성할 필요가 있을까???
 
-	private final CheckPointJpaRepository checkPointJpaRepository;
-	private final ErrorJpaRepository errorJpaRepository;
+	private final CheckPointRepository checkPointRepository;
+	private final ErrorRepository errorRepository;
 
 	private final ErrorEventManager errorEventManager;
 
@@ -46,8 +48,8 @@ public class SseHeartbeatSender implements HeartBeatSender { // 어차피 유틸
 
 		if (!sessionContainer.isEmpty()) { // 사용자가 있다면, 로그를 전송한다.
 
-			Long countTodaySuccess = checkPointJpaRepository.countTodaySuccessCheckPoint();
-			Long countTodayError = errorJpaRepository.countTodayErrors();
+			Long countTodaySuccess = checkPointRepository.countTodaySuccessCheckPoint();
+			Long countTodayError = errorRepository.countTodayErrors();
 			int total = countTodaySuccess.intValue() + countTodayError.intValue();
 
 			// 현재 error 상태
@@ -63,7 +65,7 @@ public class SseHeartbeatSender implements HeartBeatSender { // 어차피 유틸
 
 			// 뒤에 추가
 			errorList.addAll(
-				errorJpaRepository.findTodayErrors().stream()
+				errorRepository.findTodayErrors().stream()
 					.map(errorDTOFactory::ErrorEntityToErrorDTO)
 					.toList()
 			);

@@ -12,7 +12,7 @@ import com.debate.croll.producer.crawler.source.community.config.CommunitySource
 import com.debate.croll.producer.crawler.common.OriginClass;
 import com.debate.croll.producer.crawler.common.Type;
 import com.debate.croll.producer.entity.ErrorEntity;
-import com.debate.croll.producer.repository.ErrorJpaRepository;
+import com.debate.croll.infrastructure.repository.jpa.ErrorJpaRepository;
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.source.news.config.NewsUrlList;

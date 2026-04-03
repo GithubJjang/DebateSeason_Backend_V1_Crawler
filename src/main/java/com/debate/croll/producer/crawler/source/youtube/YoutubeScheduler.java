@@ -14,7 +14,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.stereotype.Component;
 
 import com.debate.croll.producer.entity.MediaEntity;
-import com.debate.croll.producer.repository.MediaJpaRepository;
+import com.debate.croll.infrastructure.repository.jpa.MediaJpaRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

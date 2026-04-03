@@ -6,12 +6,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.debate.croll.producer.crawler.dto.ErrorDTO;
-import com.debate.croll.producer.service.CheckPointService;
-import com.debate.croll.producer.service.ErrorService;
+import com.debate.croll.infrastructure.service.CheckPointService;
+import com.debate.croll.infrastructure.service.ErrorService;
 import com.debate.croll.producer.crawler.manager.CrawlerRunner;
 import com.debate.croll.producer.crawler.common.OriginClass;
 import com.debate.croll.producer.crawler.common.Type;
-import com.debate.croll.monitor.util.FailCounter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,9 +57,6 @@ public class CrawlerScheduler {
 			);
 
 			errorService.save(errorDTO);
-
-			//
-			FailCounter.count();
 
 
 		}
