@@ -12,7 +12,7 @@ import com.debate.croll.producer.crawler.source.community.config.CommunitySource
 import com.debate.croll.producer.crawler.common.OriginClass;
 import com.debate.croll.producer.crawler.common.Type;
 import com.debate.croll.producer.entity.ErrorEntity;
-import com.debate.croll.producer.repository.ErrorRepository;
+import com.debate.croll.producer.repository.ErrorJpaRepository;
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.source.news.config.NewsUrlList;
@@ -34,7 +34,7 @@ public class CrawlerRunner {
 	private final NewsUrlList newsUrlList;
 
 	// 에러 처리를 위한 빈
-	private final ErrorRepository errorRepository;
+	private final ErrorJpaRepository errorJpaRepository;
 
 	public void startCommunityCrawler() {
 
@@ -66,7 +66,7 @@ public class CrawlerRunner {
 				.createdAt(LocalDateTime.now().toString())
 				.build();
 
-			errorRepository.save(errorEntity);
+			errorJpaRepository.save(errorEntity);
 
 			Thread.currentThread().interrupt(); // 예상치 못한 스레드 종료 신호를 받을 때, interrupt flag를 바꾸어 종료될 수 있도록 해야함. 근데 이런 경우 거의 없는데...
 
@@ -157,7 +157,7 @@ public class CrawlerRunner {
 				.createdAt(LocalDateTime.now().toString())
 				.build();
 
-			errorRepository.save(errorEntity);
+			errorJpaRepository.save(errorEntity);
 
 			Thread.currentThread().interrupt(); // 예상치 못한 스레드 종료 신호를 받을 때, interrupt flag를 바꾸어 종료될 수 있도록 해야함. 근데 이런 경우 거의 없는데...
 		}
@@ -174,7 +174,7 @@ public class CrawlerRunner {
 				.createdAt(LocalDateTime.now().toString())
 				.build();
 
-			errorRepository.save(errorEntity);
+			errorJpaRepository.save(errorEntity);
 
 		}
 	}

@@ -2,15 +2,16 @@ package com.debate.croll.producer.crawler;
 
 import java.time.LocalDateTime;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.debate.croll.producer.crawler.request.ErrorDTO;
-import com.debate.croll.producer.crawler.service.CheckPointService;
-import com.debate.croll.producer.crawler.service.ErrorService;
+import com.debate.croll.producer.crawler.dto.ErrorDTO;
+import com.debate.croll.producer.service.CheckPointService;
+import com.debate.croll.producer.service.ErrorService;
 import com.debate.croll.producer.crawler.manager.CrawlerRunner;
 import com.debate.croll.producer.crawler.common.OriginClass;
 import com.debate.croll.producer.crawler.common.Type;
-import com.debate.croll.monitor.FailCounter;
+import com.debate.croll.monitor.util.FailCounter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +29,7 @@ public class CrawlerScheduler {
 	//@Scheduled(initialDelay = 15000,fixedDelay = 86400000)
 	//@Scheduled(cron = "0 0 17 * * ?",zone = "Asia/Seoul")
 	//@Scheduled(cron = "0 18 13 * * ?", zone = "Asia/Seoul")
-	//@Scheduled(fixedDelay = 86400000)
+	@Scheduled(fixedDelay = 86400000)
 	public void crawl(){
 
 		try{

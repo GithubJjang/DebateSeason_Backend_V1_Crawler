@@ -16,8 +16,8 @@ import lombok.Setter;
 public class CrawlerStatusResponse {
 
 	private ResponseState responseState; // progressLogMap로 변경
-	private Map<String,String> logMap; // 로그 목록.
-	private Map<String,Integer> exceptionTypeCountMap; // 예외 집계 맵.
+	//private Map<String,String> logMap; // 로그 목록.
+	private Map<String,Integer> exceptionMap; // 예외 집계 맵.
 	private CrawlerExecutionStats state;// 현재 상태.
 
 

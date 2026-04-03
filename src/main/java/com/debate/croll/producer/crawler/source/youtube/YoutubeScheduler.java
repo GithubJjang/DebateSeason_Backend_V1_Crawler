@@ -14,7 +14,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.stereotype.Component;
 
 import com.debate.croll.producer.entity.MediaEntity;
-import com.debate.croll.producer.repository.MediaRepository;
+import com.debate.croll.producer.repository.MediaJpaRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class YoutubeScheduler {
 
-	private final MediaRepository mediaRepository;
+	private final MediaJpaRepository mediaJpaRepository;
 	private final ChromeOptions options;
 	//@Scheduled(cron = "0 0 17 * * ?",zone = "Asia/Seoul")
 	//@Scheduled(fixedDelay = 60000000)
@@ -97,7 +97,7 @@ public class YoutubeScheduler {
 					.createdAt(now.toString())
 					.build()
 					;
-				mediaRepository.save(youtube);
+				mediaJpaRepository.save(youtube);
 
 				count++;
 

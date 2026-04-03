@@ -1,6 +1,6 @@
 package com.debate.croll.producer.crawler.mapper.error;
 
-import com.debate.croll.producer.crawler.request.ErrorDTO;
+import com.debate.croll.producer.crawler.dto.ErrorDTO;
 import com.debate.croll.producer.entity.ErrorEntity;
 
 public class ErrorMapper {

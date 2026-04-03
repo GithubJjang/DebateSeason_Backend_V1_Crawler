@@ -26,6 +26,8 @@ spring:
   datasource:
     driver-class-name: org.sqlite.JDBC
     url: jdbc:sqlite:./data/logger.db
+    # jdbc:sqlite:./data/logger.db
+    # jdbc:sqlite:./data/test.db
 
     # 1. 크롤러 <-> 토론철 백엔드 서버 간 연결 (MariaDB)
     #publisher:

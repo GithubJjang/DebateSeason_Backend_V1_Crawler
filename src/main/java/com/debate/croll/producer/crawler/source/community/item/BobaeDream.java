@@ -14,18 +14,18 @@ import org.springframework.stereotype.Component;
 import com.debate.croll.producer.crawler.source.community.config.CommunityNameList;
 import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.source.community.config.CommunityUrlList;
-import com.debate.croll.producer.crawler.request.CheckPointDTO;
-import com.debate.croll.producer.crawler.request.ErrorDTO;
-import com.debate.croll.producer.crawler.request.MediaDTO;
-import com.debate.croll.producer.crawler.service.CrawlerService;
-import com.debate.croll.producer.crawler.service.ErrorService;
+import com.debate.croll.producer.crawler.dto.CheckPointDTO;
+import com.debate.croll.producer.crawler.dto.ErrorDTO;
+import com.debate.croll.producer.crawler.dto.MediaDTO;
+import com.debate.croll.producer.service.CrawlerApplicationService;
+import com.debate.croll.producer.service.ErrorService;
 import com.debate.croll.webdriver.WebDriverFactory;
 import com.debate.croll.webdriver.WebDriverRunner;
 import com.debate.croll.producer.crawler.common.Type;
 import com.debate.croll.producer.crawler.common.OriginClass;
 import com.debate.croll.producer.crawler.source.community.config.CommunityConfig;
 
-import com.debate.croll.monitor.FailCounter;
+import com.debate.croll.monitor.util.FailCounter;
 import com.debate.croll.producer.crawler.common.Status;
 
 import jakarta.transaction.Transactional;
@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 
-	private final CrawlerService crawlerService;
+	private final CrawlerApplicationService crawlerApplicationService;
 	private final ErrorService errorService;
 
 	private final WebDriverFactory webDriverFactory;
@@ -156,7 +156,7 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 				Status.REBOOT
 			);
 
-			crawlerService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
+			crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
 
 		} catch (Exception e){
 

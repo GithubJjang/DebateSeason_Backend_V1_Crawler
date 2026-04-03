@@ -2,7 +2,6 @@ package com.debate.croll.monitor.heartbeat.sender;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -11,19 +10,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.debate.croll.producer.entity.ErrorEntity;
-import com.debate.croll.monitor.manager.ErrorEventProcessor;
-import com.debate.croll.producer.repository.ErrorRepository;
-import com.debate.croll.monitor.FailCounter;
+import com.debate.croll.monitor.manager.ErrorEventManager;
+import com.debate.croll.monitor.mapper.error.ErrorDTOFactory;
+import com.debate.croll.monitor.mapper.error.ErrorDTO;
+
+import com.debate.croll.producer.repository.CheckPointJpaRepository;
+import com.debate.croll.producer.repository.ErrorJpaRepository;
+
 import com.debate.croll.monitor.heartbeat.scheduler.HeartBeatScheduler;
 import com.debate.croll.monitor.heartbeat.sender.template.HeartBeatSender;
 import com.debate.croll.monitor.response.crawler.CrawlerExecutionStats;
 import com.debate.croll.monitor.response.crawler.CrawlerStatusResponse;
 import com.debate.croll.monitor.response.crawler.ResponseState;
-import com.debate.croll.monitor.sseEmitter.session.Session;
-import com.debate.croll.monitor.sseEmitter.session.SessionContainer;
-import com.debate.croll.monitor.manager.FileManager;
-import com.debate.croll.monitor.manager.ProgressLogFormatter;
+import com.debate.croll.monitor.util.sse.session.SseSession;
+import com.debate.croll.monitor.util.sse.SessionManager;
+
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,71 +34,67 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class SseHeartbeatSender implements HeartBeatSender { // 어차피 유틸리티 클래스인데, 매번 새로 생성할 필요가 있을까???
 
-	private final ErrorRepository errorRepository;
+	private final CheckPointJpaRepository checkPointJpaRepository;
+	private final ErrorJpaRepository errorJpaRepository;
+
+	private final ErrorEventManager errorEventManager;
 
 	public void sendHeartbeat(HeartBeatScheduler heartBeatScheduler){
 
-		FileManager fileManager = new FileManager();
-
 		// 1. { userId, SseSession } ,사용자마다 각자 다른 로그 정보들을 가지고 있다.
-		ConcurrentHashMap<String, Session> sessionContainer = SessionContainer.getSessionContainer();
+		ConcurrentHashMap<String, SseSession> sessionContainer = SessionManager.getSessionContainer();
 
-		if (sessionContainer.isEmpty()) {
+		if (!sessionContainer.isEmpty()) { // 사용자가 있다면, 로그를 전송한다.
 
-			log.info("연결된 사용자가 없습니다.");
-			return;
-		}
-		else{
+			Long countTodaySuccess = checkPointJpaRepository.countTodaySuccessCheckPoint();
+			Long countTodayError = errorJpaRepository.countTodayErrors();
+			int total = countTodaySuccess.intValue() + countTodayError.intValue();
 
-			// 2. userId 목록 가져오기.
-			Set<String> userIdSet = sessionContainer.keySet();
-
-			// 3. 지금 에러 + 성공 목록 스냅샷.(기준) -> 성능을 고려해서
-			List<ErrorEntity> changedTodayErrorEntities; // null로 두면 sse 에러 발생함. 따라서 빈 배열로 두어야 함. 그리고 DB에선 PK로 정렬해서 순서가 일정.
-			List<ProgressLogFormatter> realTimeSuccessLogList = fileManager.extractSuccessFileInfo();
-
-			if(FailCounter.comparePreFailCountToCurrentFailCount()==false){ // 신규 에러가 발생한 상태. 따라서 DB에서 가져온다.
-
-				changedTodayErrorEntities = errorRepository.findTodayErrors();
-
-				FailCounter.updatePreFailCount(); // preFailCount를 업데이트한다.
-			}
-			else{
-				changedTodayErrorEntities = new ArrayList<>();
-			}
+			// 현재 error 상태
+			ErrorDTOFactory errorDTOFactory = new ErrorDTOFactory();
 
 			//
-			// int total = fileManager.countTotalProgressLogs(); // 전체 로그는 고정값
-			int successLogSize = realTimeSuccessLogList.size(); // 성공 개수
-			int errorLogSize = FailCounter.currentFailCount.get(); // 실패 개수
+			List<ErrorDTO> errorList = new ArrayList<>();
+			errorList.add(
+				ErrorDTO.builder()
+					.id(0L)
+					.build()
+			);
 
-			int total = successLogSize + errorLogSize;
+			// 뒤에 추가
+			errorList.addAll(
+				errorJpaRepository.findTodayErrors().stream()
+					.map(errorDTOFactory::ErrorEntityToErrorDTO)
+					.toList()
+			);
 
-			// 4.
+			// 4. user에게 로그 전송하기
+			Set<String> userIdSet = sessionContainer.keySet(); // userId 목록 가져오기.
+
 			for(String userId : userIdSet){ // 사용자마다 별도로 전송을 해준다.
 
-				Session session = sessionContainer.get(userId);
-				SseEmitter personalSseEmitter = session.getSseEmitter();
+				SseSession sseSession = sessionContainer.get(userId);
+				SseEmitter sseEmitter = sseSession.getSseEmitter();
 
 				// 각 세션별로 Offset을 이용해서 변경분만 전송을 하자.
-				Map<String,String> dirtyCheckedSuccessLogMap = dirtyCheckingSuccessLog(session,realTimeSuccessLogList); // 어차피 append-only라서 문제 x
-				Map<String,Integer> dirtyCheckedErrorLogMap = dirtyCheckingErrorLog(session, changedTodayErrorEntities); // 에러 로그 집계
+				Map<String,Integer> incrementalErrorMap = getIncrementalErrorPage(sseSession,errorList); // 에러 로그 집계
+				List<ErrorDTO> incrementalErrorList = getIncrementalErrorList(sseSession,errorList); // 에러 증분만 전송.
 
 				// 전체, 성공, 실패, 진행률 객체
 				CrawlerExecutionStats executionStats = CrawlerExecutionStats.builder()
 					.total(total)
-					.success(successLogSize)
-					.error(errorLogSize)
-					//.progress(fileManager.calcProgress(total,successLogSize,errorLogSize))
+					.success(countTodaySuccess.intValue())
+					.error(countTodayError.intValue())
+					.errorList(incrementalErrorList)
 					.build();
 
 				// 응답객체
 				CrawlerStatusResponse crawlerStatusResponse =
-					new CrawlerStatusResponse(ResponseState.DIRTY,dirtyCheckedSuccessLogMap,dirtyCheckedErrorLogMap,executionStats);
+					new CrawlerStatusResponse(ResponseState.DIRTY,incrementalErrorMap,executionStats);
 
 				try {
 					// 변경된 부분만 전송을 한다.
-					personalSseEmitter.send(crawlerStatusResponse);
+					sseEmitter.send(crawlerStatusResponse);
 
 				}
 				catch (IOException e) { // 브라우저 종료하면, 활성화 3
@@ -105,69 +102,68 @@ public class SseHeartbeatSender implements HeartBeatSender { // 어차피 유틸
 					log.error("SseHeartbeatSender.IOException operates");
 
 					// false는 세션이 안 끊어진 경우 -> 따라서, decrement를 실행
-					if(SessionContainer.isSessionDisconnected(userId)==false){
+					if(!SessionManager.isSessionDisconnected(userId)){
 						heartBeatScheduler.decrement(); // atomic하게 -1
 					}
 
 				}
 
 			}
-
 		}
 	}
 
-	public Map<String,String> dirtyCheckingSuccessLog(
-		Session session,
-		List<ProgressLogFormatter> successLogList
-		)
-	{
-		// 반환할 데이터 자료구조.
-		Map<String,String> dirtyMap = new LinkedHashMap<>();
+	public List<ErrorDTO> getIncrementalErrorList(SseSession sseSession,
+		List<ErrorDTO> errorList){
 
-		int start = session.getProgressLogOffset();
-		int end = successLogList.size();
+		int errorLogOffset = sseSession.getErrorLogOffset();
+		boolean take = false;
 
-		// 딱 변경분만 전송을 하게끔 수정.
-		for(int i=start; i<end; i++){
+		List<ErrorDTO> incrementalErrorList = new ArrayList<>();
+		for(ErrorDTO e : errorList){
 
-			ProgressLogFormatter progressLogFormatter = successLogList.get(i);
+			// 상태값 변환
+			if(e.getId()==errorLogOffset){
+				take = true;
+				continue;
+			}
 
-			String name = progressLogFormatter.getName();
-			String date = progressLogFormatter.getModifiedDate();
+			// 값 담기
+			if(take){
+				incrementalErrorList.add(e);
+				sseSession.setErrorLogOffset(e.getId().intValue());
+			}
 
-			dirtyMap.put(name,date);
 		}
 
-		session.setProgressLogOffset(end); // 그리고, Offset을 다음 가져올 포인터로 이동을 시킨다.
-
-		return dirtyMap;
-
-
-
+		return incrementalErrorList;
 	}
 
-	public Map<String,Integer> dirtyCheckingErrorLog(
-		Session session,
-		List<ErrorEntity> findTodayErrorEntities){
 
-		// 사용자가 가진 errorLog 목록과 방금 저장된 errorLog 목록 비교해서, 변경분만 반환을 해준다.
+	public Map<String,Integer> getIncrementalErrorPage(
+		SseSession sseSession,
+		List<ErrorDTO> errorList){
 
-		int start = session.getErrorLogOffset();
-		int end = findTodayErrorEntities.size();
+		int errorLogOffset = sseSession.getErrorLogOffset();
+		boolean take = false;
 
-		// dirtyPage에 데이터 추가하기.
-		List<ErrorEntity> dirtyPage = new ArrayList<>();
+		List<ErrorDTO> incrementalErrorPages = new ArrayList<>();
+		for(ErrorDTO e : errorList){
 
-		for(int i=start; i<end; i++){
-			dirtyPage.add(findTodayErrorEntities.get(i));
+			// 상태값 변환
+			if(e.getId()==errorLogOffset){
+				take = true;
+				continue;
+			}
+
+			// 값 담기
+			if(take){
+				incrementalErrorPages.add(e);
+			}
+
 		}
 
-		session.setErrorLogOffset(end); // 그리고, Offset을 다음 가져올 포인터로 이동을 시킨다.
-
-		ErrorEventProcessor errorEventProcessor = new ErrorEventProcessor();
-
-		return errorEventProcessor.countExceptionClass(dirtyPage);
-
+		return errorEventManager.countExceptionClass(incrementalErrorPages);
 	}
+
 
 }

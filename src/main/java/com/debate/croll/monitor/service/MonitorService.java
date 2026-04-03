@@ -3,7 +3,7 @@ package com.debate.croll.monitor.service;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.debate.croll.monitor.util.SseSessionStore;
+import com.debate.croll.monitor.util.sse.SseSessionStore;
 
 import lombok.RequiredArgsConstructor;
 

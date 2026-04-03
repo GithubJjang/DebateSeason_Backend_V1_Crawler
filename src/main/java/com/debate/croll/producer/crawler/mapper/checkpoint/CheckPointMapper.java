@@ -1,9 +1,7 @@
 package com.debate.croll.producer.crawler.mapper.checkpoint;
 
-import com.debate.croll.producer.crawler.request.CheckPointDTO;
-import com.debate.croll.producer.crawler.request.MediaDTO;
+import com.debate.croll.producer.crawler.dto.CheckPointDTO;
 import com.debate.croll.producer.entity.CheckPointEntity;
-import com.debate.croll.producer.entity.MediaEntity;
 
 public class CheckPointMapper {
 

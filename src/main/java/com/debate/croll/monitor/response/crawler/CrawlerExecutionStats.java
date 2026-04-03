@@ -2,7 +2,7 @@ package com.debate.croll.monitor.response.crawler;
 
 import java.util.List;
 
-import com.debate.croll.monitor.response.error.ErrorFormatMapper;
+import com.debate.croll.monitor.mapper.error.ErrorDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,8 +20,7 @@ public class CrawlerExecutionStats {
 	private int success;
 	private int error;
 	private int total;
-	//private String progress;
 
-	private List<ErrorFormatMapper> errorFormatMapperList;
+	private List<ErrorDTO> errorList;
 
 }

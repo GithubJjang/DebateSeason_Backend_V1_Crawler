@@ -4,7 +4,7 @@ import org.springframework.data.annotation.CreatedDate;
 
 import com.debate.croll.producer.crawler.common.OriginClass;
 import com.debate.croll.producer.crawler.common.Type;
-import com.debate.croll.monitor.response.error.ErrorFormatMapper;
+import com.debate.croll.monitor.mapper.error.ErrorDTO;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -55,16 +55,4 @@ public class ErrorEntity {
 	@Column(name = "created_at", updatable = false, columnDefinition = "TEXT")
 	private String createdAt; // 생성일. SQLite는 날짜 타입이 없어서 -> TEXT로 저장
 
-	public ErrorFormatMapper toErrorFormatMapper(){
-
-		return ErrorFormatMapper.builder()
-			.originClass(OriginClass)
-			.type(type)
-			.exceptionClass(exceptionClass)
-			.message(message)
-			.name(name)
-			.createdAt(createdAt)
-			.build();
-
-	}
 }
