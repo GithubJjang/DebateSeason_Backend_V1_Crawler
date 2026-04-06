@@ -1,10 +1,10 @@
-package com.debate.croll.domain;
+package com.debate.croll.domain.repository;
 
 import java.util.Optional;
 
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.producer.crawler.mapper.checkpoint.CheckPointProjection;
-import com.debate.croll.producer.entity.CheckPointEntity;
+import com.debate.croll.infrastructure.entity.CheckPointEntity;
 
 public interface CheckPointRepository {
 

@@ -10,14 +10,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.debate.croll.domain.CheckPointRepository;
-import com.debate.croll.domain.ErrorRepository;
+import com.debate.croll.domain.repository.CheckPointRepository;
+import com.debate.croll.domain.repository.ErrorRepository;
 import com.debate.croll.monitor.manager.ErrorEventManager;
 import com.debate.croll.monitor.mapper.error.ErrorDTOFactory;
 import com.debate.croll.monitor.mapper.error.ErrorDTO;
-
-import com.debate.croll.infrastructure.repository.jpa.CheckPointJpaRepository;
-import com.debate.croll.infrastructure.repository.jpa.ErrorJpaRepository;
 
 import com.debate.croll.monitor.heartbeat.scheduler.HeartBeatScheduler;
 import com.debate.croll.monitor.heartbeat.sender.template.HeartBeatSender;

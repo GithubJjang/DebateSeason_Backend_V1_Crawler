@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.producer.crawler.mapper.checkpoint.CheckPointProjection;
-import com.debate.croll.producer.entity.CheckPointEntity;
+import com.debate.croll.infrastructure.entity.CheckPointEntity;
 
 @Repository
 public interface CheckPointJpaRepository extends JpaRepository<CheckPointEntity,Long> {

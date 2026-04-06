@@ -29,7 +29,7 @@ public class CrawlerRestartManager {
 			Status status = checkPointProjection.getStatus();
 
 			if(status==Status.DONE){
-				log.info("The reboot point is final Checkpoint");
+				log.info("All Jobs done. because the checkpoint status is [DONE]");
 				return;
 			}
 

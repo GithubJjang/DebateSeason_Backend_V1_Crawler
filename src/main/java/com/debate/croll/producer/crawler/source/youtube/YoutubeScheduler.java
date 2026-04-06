@@ -13,7 +13,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.stereotype.Component;
 
-import com.debate.croll.producer.entity.MediaEntity;
+import com.debate.croll.infrastructure.entity.MediaEntity;
 import com.debate.croll.infrastructure.repository.jpa.MediaJpaRepository;
 
 import lombok.RequiredArgsConstructor;

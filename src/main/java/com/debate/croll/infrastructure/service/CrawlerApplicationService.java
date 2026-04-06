@@ -4,15 +4,14 @@ import java.util.NoSuchElementException;
 
 import org.springframework.stereotype.Service;
 
-import com.debate.croll.domain.CheckPointRepository;
+import com.debate.croll.domain.repository.CheckPointRepository;
 import com.debate.croll.producer.crawler.mapper.checkpoint.CheckPointMapper;
 import com.debate.croll.producer.crawler.mapper.media.MediaMapper;
 import com.debate.croll.producer.crawler.dto.CheckPointDTO;
 import com.debate.croll.producer.crawler.dto.MediaDTO;
 import com.debate.croll.producer.crawler.common.Type;
-import com.debate.croll.producer.entity.CheckPointEntity;
-import com.debate.croll.producer.entity.MediaEntity;
-import com.debate.croll.infrastructure.repository.jpa.CheckPointJpaRepository;
+import com.debate.croll.infrastructure.entity.CheckPointEntity;
+import com.debate.croll.infrastructure.entity.MediaEntity;
 import com.debate.croll.infrastructure.repository.jpa.MediaJpaRepository;
 
 import jakarta.transaction.Transactional;

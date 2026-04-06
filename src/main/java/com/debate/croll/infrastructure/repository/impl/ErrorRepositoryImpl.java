@@ -4,9 +4,9 @@ import java.util.List;
 
 import org.springframework.stereotype.Repository;
 
-import com.debate.croll.domain.ErrorRepository;
+import com.debate.croll.domain.repository.ErrorRepository;
 import com.debate.croll.infrastructure.repository.jpa.ErrorJpaRepository;
-import com.debate.croll.producer.entity.ErrorEntity;
+import com.debate.croll.infrastructure.entity.ErrorEntity;
 
 import lombok.RequiredArgsConstructor;
 

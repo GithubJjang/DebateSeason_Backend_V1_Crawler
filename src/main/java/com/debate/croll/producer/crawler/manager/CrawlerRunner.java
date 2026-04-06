@@ -11,7 +11,7 @@ import com.debate.croll.producer.crawler.mapper.checkpoint.CheckPointProjection;
 import com.debate.croll.producer.crawler.source.community.config.CommunitySourceList;
 import com.debate.croll.producer.crawler.common.OriginClass;
 import com.debate.croll.producer.crawler.common.Type;
-import com.debate.croll.producer.entity.ErrorEntity;
+import com.debate.croll.infrastructure.entity.ErrorEntity;
 import com.debate.croll.infrastructure.repository.jpa.ErrorJpaRepository;
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
@@ -77,8 +77,10 @@ public class CrawlerRunner {
 
 		List<AbstractCommunitySource> communitySourcesList = communitySourceList.getSourceList();
 
-		int size = communitySourcesList.size();
-		int nextStartIndex = 0;
+		// int size = communitySourcesList.size();
+		// int nextStartIndex = 0;
+
+		boolean isLock = true;
 
 		try{
 
@@ -90,22 +92,29 @@ public class CrawlerRunner {
 
 					Status status = checkPointProjection.getStatus();//REBOOT
 					source.crawl(status, checkPointProjection.getCrawlIndex()+1);// 다음꺼부터 크롤링하기
-					nextStartIndex++; // 다음을 겨누고 있어야 한다.
+					// nextStartIndex++; // 다음을 겨누고 있어야 한다.
+					// break;
 
-					break;
+					isLock = false; // isLock 해지 -> 다음꺼는 정상적으로 가져올 수 있다.
+					continue; // 중복 실행을 막기 위해서, continue를 사용.
 
 				}
 
-				nextStartIndex++;
+				if(!isLock){
+					source.crawl(Status.STEADY,-1);
+					Thread.sleep(5000);
+				}
+
+				//nextStartIndex++;
 
 			}
 
 			// 2. 커뮤니티의 남은 부분 전체 실행하기
-			for(int i=nextStartIndex; i<size; i++){
-				AbstractCommunitySource source = communitySourcesList.get(i);
-				source.crawl(Status.STEADY,-1);
-				Thread.sleep(5000); // 네트워크 폭주를 방지하기 위한 설정.
-			}
+			// for(int i=nextStartIndex; i<size; i++){
+			// 	AbstractCommunitySource source = communitySourcesList.get(i);
+			// 	source.crawl(Status.STEADY,-1);
+			// 	Thread.sleep(5000); // 네트워크 폭주를 방지하기 위한 설정.
+			// }
 
 			// 3. News는 정상적으로 실행하기
 			this.startNewsCrawler();

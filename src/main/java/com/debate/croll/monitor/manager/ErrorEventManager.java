@@ -7,7 +7,6 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 import com.debate.croll.monitor.mapper.error.ErrorDTO;
-import com.debate.croll.producer.entity.ErrorEntity;
 
 @Component
 public class ErrorEventManager {

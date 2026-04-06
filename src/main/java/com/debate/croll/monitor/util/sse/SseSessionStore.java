@@ -7,7 +7,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.debate.croll.domain.ErrorRepository;
+import com.debate.croll.domain.repository.ErrorRepository;
 import com.debate.croll.monitor.manager.ErrorEventManager;
 import com.debate.croll.monitor.mapper.error.ErrorDTOFactory;
 import com.debate.croll.monitor.response.crawler.CrawlerExecutionStats;
@@ -18,7 +18,6 @@ import com.debate.croll.monitor.util.sse.session.SseSession;
 import com.debate.croll.monitor.util.sse.session.SseEmitterFactory;
 
 import com.debate.croll.infrastructure.repository.jpa.CheckPointJpaRepository;
-import com.debate.croll.infrastructure.repository.jpa.ErrorJpaRepository;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

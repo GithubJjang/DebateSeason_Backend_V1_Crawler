@@ -1,7 +1,6 @@
 package com.debate.croll.monitor.mapper.error;
 
-import com.debate.croll.monitor.mapper.error.ErrorDTO;
-import com.debate.croll.producer.entity.ErrorEntity;
+import com.debate.croll.infrastructure.entity.ErrorEntity;
 
 public class ErrorDTOFactory {
 

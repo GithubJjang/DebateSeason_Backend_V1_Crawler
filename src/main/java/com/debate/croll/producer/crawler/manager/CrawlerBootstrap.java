@@ -1,5 +1,7 @@
 package com.debate.croll.producer.crawler.manager;
 
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
@@ -12,10 +14,10 @@ public class CrawlerBootstrap { // 장애 복구를 하기 위해서, 실행이 
 
 	private final CrawlerRestartManager crawlerRestartManager;
 
-	//@EventListener(ApplicationReadyEvent.class)
+	@EventListener(ApplicationReadyEvent.class)
 	public void recovery(){
 
-		log.info("Crawler Recovery On");
+		log.info("Crawler Recovery System Activated!");
 		crawlerRestartManager.restartCrawler();
 
 

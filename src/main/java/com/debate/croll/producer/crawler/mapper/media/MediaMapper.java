@@ -1,7 +1,7 @@
 package com.debate.croll.producer.crawler.mapper.media;
 
 import com.debate.croll.producer.crawler.dto.MediaDTO;
-import com.debate.croll.producer.entity.MediaEntity;
+import com.debate.croll.infrastructure.entity.MediaEntity;
 
 public class MediaMapper {
 

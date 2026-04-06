@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import com.debate.croll.producer.entity.ErrorEntity;
+import com.debate.croll.infrastructure.entity.ErrorEntity;
 
 @Repository
 public interface ErrorJpaRepository extends JpaRepository<ErrorEntity,Long> {

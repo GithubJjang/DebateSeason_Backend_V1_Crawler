@@ -1,4 +1,4 @@
-package com.debate.croll.producer.entity;
+package com.debate.croll.infrastructure.entity;
 
 import org.springframework.data.annotation.CreatedDate;
 

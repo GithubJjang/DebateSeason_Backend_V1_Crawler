@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.debate.croll.producer.entity.MediaEntity;
+import com.debate.croll.infrastructure.entity.MediaEntity;
 
 @Repository
 public interface MediaJpaRepository extends JpaRepository<MediaEntity,Long> {

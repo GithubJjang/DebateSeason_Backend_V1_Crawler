@@ -1,7 +1,7 @@
 package com.debate.croll.producer.crawler.dto.response.factory;
 
 import com.debate.croll.producer.crawler.dto.response.MediaRawResponse;
-import com.debate.croll.producer.entity.MediaEntity;
+import com.debate.croll.infrastructure.entity.MediaEntity;
 
 public class MediaResponseFactory{ // 매번 빌더로 만들기 번거롭다.
 

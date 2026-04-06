@@ -1,10 +1,8 @@
-package com.debate.croll.domain;
+package com.debate.croll.domain.repository;
 
 import java.util.List;
 
-import org.springframework.data.jpa.repository.Query;
-
-import com.debate.croll.producer.entity.ErrorEntity;
+import com.debate.croll.infrastructure.entity.ErrorEntity;
 
 public interface ErrorRepository {
 

@@ -4,9 +4,9 @@ import java.util.List;
 
 import org.springframework.stereotype.Repository;
 
-import com.debate.croll.domain.MediaRepository;
+import com.debate.croll.domain.repository.MediaRepository;
 import com.debate.croll.infrastructure.repository.jpa.MediaJpaRepository;
-import com.debate.croll.producer.entity.MediaEntity;
+import com.debate.croll.infrastructure.entity.MediaEntity;
 
 import lombok.RequiredArgsConstructor;
 

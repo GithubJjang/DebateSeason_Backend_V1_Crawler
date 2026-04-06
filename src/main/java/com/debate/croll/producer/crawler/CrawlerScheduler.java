@@ -26,9 +26,9 @@ public class CrawlerScheduler {
 	private final ErrorService errorService;
 
 	//@Scheduled(initialDelay = 15000,fixedDelay = 86400000)
-	//@Scheduled(cron = "0 0 17 * * ?",zone = "Asia/Seoul")
 	//@Scheduled(cron = "0 18 13 * * ?", zone = "Asia/Seoul")
-	@Scheduled(fixedDelay = 86400000)
+	//@Scheduled(fixedDelay = 86400000)
+	@Scheduled(cron = "0 0 17 * * ?",zone = "Asia/Seoul")
 	public void crawl(){
 
 		try{

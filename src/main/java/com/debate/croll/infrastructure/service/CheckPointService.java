@@ -4,11 +4,10 @@ import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
 
-import com.debate.croll.domain.CheckPointRepository;
+import com.debate.croll.domain.repository.CheckPointRepository;
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.producer.crawler.mapper.checkpoint.CheckPointProjection;
-import com.debate.croll.producer.entity.CheckPointEntity;
-import com.debate.croll.infrastructure.repository.jpa.CheckPointJpaRepository;
+import com.debate.croll.infrastructure.entity.CheckPointEntity;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

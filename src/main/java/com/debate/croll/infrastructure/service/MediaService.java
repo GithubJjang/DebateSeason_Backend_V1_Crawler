@@ -6,13 +6,12 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.debate.croll.domain.MediaRepository;
+import com.debate.croll.domain.repository.MediaRepository;
 import com.debate.croll.producer.common.ApiResponse;
 import com.debate.croll.producer.crawler.dto.response.MediaRawResponse;
 import com.debate.croll.producer.common.Status;
 import com.debate.croll.producer.crawler.dto.response.factory.MediaResponseFactory;
-import com.debate.croll.producer.entity.MediaEntity;
-import com.debate.croll.infrastructure.repository.jpa.MediaJpaRepository;
+import com.debate.croll.infrastructure.entity.MediaEntity;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
