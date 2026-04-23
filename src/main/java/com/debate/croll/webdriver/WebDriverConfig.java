@@ -38,6 +38,7 @@ public class WebDriverConfig {
 		options.addArguments("--user-agent=" + userAgent); // 랜덤 User-Agent 설정
 		options.addArguments("--no-sandbox"); // 추가적인 권한 설정
 		options.addArguments("--disable-dev-shm-usage"); // Docker 환경에서 공유 메모리 부족 문제 해결
+		options.addArguments("--remote-allow-origins=*"); // 원격 접속 허용을 하는 설정
 
 		// 추가적인 헤더 설정 (필요시)
 		options.addArguments("--disable-blink-features=AutomationControlled"); // 이거 false 나와야 자동화 회피 가능하다
