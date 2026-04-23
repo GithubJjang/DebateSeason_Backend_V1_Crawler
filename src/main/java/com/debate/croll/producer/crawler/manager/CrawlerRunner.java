@@ -7,7 +7,6 @@ import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
-import com.debate.croll.producer.crawler.common.RandomDelay;
 import com.debate.croll.producer.crawler.mapper.checkpoint.CheckPointProjection;
 import com.debate.croll.producer.crawler.source.community.config.CommunitySourceList;
 import com.debate.croll.producer.crawler.common.OriginClass;
@@ -29,7 +28,6 @@ public class CrawlerRunner {
 
 	// 커뮤니티 Source 목록 리스트
 	private final CommunitySourceList communitySourceList;
-	private final RandomDelay randomDelay;
 
 	// 뉴스 크롤러 목록
 	private final NewsRunner newsRunner;
@@ -48,7 +46,7 @@ public class CrawlerRunner {
 
 			for (AbstractCommunitySource e : communityCrawlList) {
 				e.crawl(Status.STEADY, -1);
-				Thread.sleep(randomDelay.getCrawlerDelay()); // 네트워크 폭주를 방지하기 위한 설정.
+				Thread.sleep(5000); // 네트워크 폭주를 방지하기 위한 설정.
 			}
 
 			// Cool down
@@ -104,7 +102,7 @@ public class CrawlerRunner {
 
 				if(!isLock){
 					source.crawl(Status.STEADY,-1);
-					Thread.sleep(randomDelay.getCrawlerDelay());
+					Thread.sleep(5000);
 				}
 
 				//nextStartIndex++;
@@ -149,7 +147,7 @@ public class CrawlerRunner {
 				for (Integer i : category) {
 
 					newsRunner.crawl(Status.STEADY,url,pressName,i,-1);
-					Thread.sleep(randomDelay.getCrawlerDelay());
+					Thread.sleep(2000);
 
 				}
 			}
@@ -209,35 +207,26 @@ public class CrawlerRunner {
 		boolean start = false;
 		Set<String> pressNameSet =  urlLinkedHashMap.keySet();
 
-		try{
+		for(String s : pressNameSet){// MBC, SBS, KBS ...
 
-			for(String s : pressNameSet){// MBC, SBS, KBS ...
+			if(s.equals(name)){ // 2. 중단된 단건에 대해서 실행
 
-				if(s.equals(name)){ // 2. 중단된 단건에 대해서 실행
+				newsRunner.crawl(status,url,name,subKey,crawIndex+1); // 101번 다 긁어옴.
 
-					newsRunner.crawl(status,url,name,subKey,crawIndex+1); // 101번 다 긁어옴.
-
-					for(Integer category : categoryNumberList){ // 102, 104번, ...
-						if(subKey < category){
-							newsRunner.crawl(Status.STEADY,url,name,category,-1); // 정상적으로 가져온다.
-						}
+				for(Integer category : categoryNumberList){ // 102, 104번, ...
+					if(subKey < category){
+						newsRunner.crawl(Status.STEADY,url,name,category,-1); // 정상적으로 가져온다.
 					}
-					start = true;
 				}
-				else if(start){ // 중단된 지점 이후, 나머지 언론사들의 크롤링을 정상적으로 수행한다.
-
-					for(Integer category : categoryNumberList){
-						newsRunner.crawl(Status.STEADY,urlLinkedHashMap.get(s),s,category,-1);
-						Thread.sleep(randomDelay.getCrawlerDelay());
-					}
-
-				}
+				start = true;
 			}
+			else if(start){ // 중단된 지점 이후, 나머지 언론사들의 크롤링을 정상적으로 수행한다.
 
+				for(Integer category : categoryNumberList){
+					newsRunner.crawl(Status.STEADY,urlLinkedHashMap.get(s),s,category,-1);
+				}
+
+			}
 		}
-		catch (Exception e){
-
-		}
-
 	}
 }
