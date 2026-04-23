@@ -39,6 +39,6 @@ out/
 ### YML ###
 src/main/resources/application.yml
 
-### DataBase ###
+### Database ###
 data/logger.db
 data/test.db
