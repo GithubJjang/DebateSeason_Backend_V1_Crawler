@@ -2,6 +2,7 @@ package com.debate.croll.producer.crawler.controller;
 
 import java.util.List;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import org.springframework.web.bind.annotation.RequestParam;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.debate.croll.producer.common.ApiResponse;
 import com.debate.croll.producer.crawler.dto.response.MediaRawResponse;
 import com.debate.croll.infrastructure.service.MediaService;
+import com.debate.croll.producer.watchdog.MediaApiRequestMonitor;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CrawlerController {
 
 	private final MediaService mediaService;
+	private final MediaApiRequestMonitor mediaApiRequestMonitor;
 
 	private final int limit = 10; // 3건 가져오기
 
@@ -32,6 +35,8 @@ public class CrawlerController {
 	public ApiResponse<List<MediaRawResponse>> getCrawlerRecords(
 		@RequestParam(name = "lastId", required = false) Long lastId
 	){
+		mediaApiRequestMonitor.markRequested(); //-> 재부팅을 위한 설정
+
 		if(lastId!=null){
 			return mediaService.findMediaAfterId(lastId,limit);
 

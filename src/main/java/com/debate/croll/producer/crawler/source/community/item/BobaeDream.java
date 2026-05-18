@@ -11,11 +11,13 @@ import org.openqa.selenium.WebElement;
 
 import org.springframework.stereotype.Component;
 
+import com.debate.croll.producer.common.ExceptionClassfier;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDtoFactory;
 import com.debate.croll.producer.crawler.source.community.config.CommunityNameList;
 import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.source.community.config.CommunityUrlList;
 import com.debate.croll.producer.crawler.dto.CheckPointDTO;
-import com.debate.croll.producer.crawler.dto.ErrorDTO;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDTO;
 import com.debate.croll.producer.crawler.dto.MediaDTO;
 import com.debate.croll.infrastructure.service.CrawlerApplicationService;
 import com.debate.croll.infrastructure.service.ErrorService;
@@ -39,7 +41,10 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 	private final CrawlerApplicationService crawlerApplicationService;
 	private final ErrorService errorService;
 
+	private final CrawlerErrorDtoFactory crawlerErrorDtoFactory;
 	private final WebDriverFactory webDriverFactory;
+
+	private final ExceptionClassfier exceptionClassfier;
 
 	private final String name = CommunityNameList.BobaeDream.name();
 
@@ -75,20 +80,14 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 			}
 
 		}
-		catch (Exception e){
+		catch (Exception exception){
 
-			//
-			String[] arr = e.getMessage().split("\\n");
-
-			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
 				OriginClass.CRAWLER,
 				Type.DRIVER,
 				name,
-				e.getClass().getName(),
-				arr[0],
-				null,
-				LocalDateTime.now().toString()
-			);
+				null);
 
 			errorService.save(errorDTO);
 
@@ -111,18 +110,17 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 	@Transactional // 리부팅 시 복구를 위해서, 매 트랜잭션 순간마다 기록을 한다.
 	public void extractElement(WebDriver driver,int i) {
 
+		String href = null;
+
 		try{
 
 			WebElement webElement = driver.findElement(
 				By.cssSelector("#boardlist > tbody > tr:nth-child(+" + i + ")"));
 
 			WebElement titleElement = webElement.findElement(By.cssSelector("td.pl14 > a.bsubject"));
-
+			href = titleElement.getAttribute("href");
 			String title = titleElement.getText();
-			String href = titleElement.getAttribute("href");
-
 			String time = webElement.findElement(By.cssSelector("td.date")).getText();
-
 			LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
 
 			// 문자열에서 시와 분 파싱
@@ -154,19 +152,19 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 
 			crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
 
-		} catch (Exception e){
+		} catch (Exception exception){
 
-			String[] arr = e.getMessage().split("\\n");
+			boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
+			if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
+				href = null;
+			}
 
-			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
 				OriginClass.CRAWLER,
 				Type.COMMUNITY,
 				name,
-				e.getClass().getName(),
-				arr[0],
-				null,
-				LocalDateTime.now().toString()
-			);
+				href);
 
 			errorService.save(errorDTO);
 

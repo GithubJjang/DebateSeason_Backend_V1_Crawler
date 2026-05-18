@@ -7,6 +7,10 @@ import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
+import com.debate.croll.infrastructure.service.ErrorService;
+import com.debate.croll.producer.common.RandomDelay;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDTO;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDtoFactory;
 import com.debate.croll.producer.crawler.mapper.checkpoint.CheckPointProjection;
 import com.debate.croll.producer.crawler.source.community.config.CommunitySourceList;
 import com.debate.croll.producer.crawler.common.OriginClass;
@@ -28,13 +32,16 @@ public class CrawlerRunner {
 
 	// 커뮤니티 Source 목록 리스트
 	private final CommunitySourceList communitySourceList;
+	private final RandomDelay randomDelay;
 
 	// 뉴스 크롤러 목록
 	private final NewsRunner newsRunner;
 	private final NewsUrlList newsUrlList;
 
 	// 에러 처리를 위한 빈
-	private final ErrorJpaRepository errorJpaRepository;
+	private final CrawlerErrorDtoFactory crawlerErrorDtoFactory;
+	private final ErrorService errorService;
+
 
 	public void startCommunityCrawler() {
 
@@ -46,30 +53,23 @@ public class CrawlerRunner {
 
 			for (AbstractCommunitySource e : communityCrawlList) {
 				e.crawl(Status.STEADY, -1);
-				Thread.sleep(5000); // 네트워크 폭주를 방지하기 위한 설정.
+				Thread.sleep(randomDelay.getCommunityCrawlerDelay()); // 네트워크 폭주를 방지하기 위한 설정.
 			}
 
 			// Cool down
 			Thread.sleep(10000);
 
 		}
-		catch (InterruptedException e) {
+		catch (InterruptedException exception) {
 
-			String[] arr = e.getMessage().split("\\n");
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
+				OriginClass.CRAWLER_RUNNER,
+				Type.COMMUNITY,
+				null,
+				null);
 
-			ErrorEntity errorEntity = ErrorEntity.builder()
-				.OriginClass(OriginClass.CRAWLER_RUNNER)
-				.type(Type.COMMUNITY)
-				.name(null)
-				.exceptionClass(e.getClass().getName())
-				.message(arr[0])
-				.createdAt(LocalDateTime.now().toString())
-				.build();
-
-			errorJpaRepository.save(errorEntity);
-
-			Thread.currentThread().interrupt(); // 예상치 못한 스레드 종료 신호를 받을 때, interrupt flag를 바꾸어 종료될 수 있도록 해야함. 근데 이런 경우 거의 없는데...
-
+			errorService.save(errorDTO);
 		}
 	}
 
@@ -102,7 +102,7 @@ public class CrawlerRunner {
 
 				if(!isLock){
 					source.crawl(Status.STEADY,-1);
-					Thread.sleep(5000);
+					Thread.sleep(randomDelay.getCommunityCrawlerDelay());
 				}
 
 				//nextStartIndex++;
@@ -131,9 +131,9 @@ public class CrawlerRunner {
 
 	public void startNewsCrawler(){
 
+		//
 		log.info("Start News Crawling ~ ");
 
-		//
 		List<String> pressNameList = newsUrlList.getNewsNameList();
 		LinkedHashMap<String,String> linkedNewsList = newsUrlList.getNewsList();
 		List<Integer> category =  newsUrlList.getCategory();
@@ -153,38 +153,16 @@ public class CrawlerRunner {
 			}
 
 		}
-		catch (InterruptedException e) {
+		catch (InterruptedException exception) {
 
-			String[] arr = e.getMessage().split("\\n");
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
+				OriginClass.CRAWLER_RUNNER,
+				Type.COMMUNITY,
+				null,
+				null);
 
-			ErrorEntity errorEntity = ErrorEntity.builder()
-				.OriginClass(OriginClass.CRAWLER_RUNNER)
-				.type(Type.NEWS)
-				.name(null)
-				.exceptionClass(e.getClass().getName())
-				.message(arr[0])
-				.createdAt(LocalDateTime.now().toString())
-				.build();
-
-			errorJpaRepository.save(errorEntity);
-
-			Thread.currentThread().interrupt(); // 예상치 못한 스레드 종료 신호를 받을 때, interrupt flag를 바꾸어 종료될 수 있도록 해야함. 근데 이런 경우 거의 없는데...
-		}
-		catch (Exception unexpectedException){
-
-			String[] arr = unexpectedException.getMessage().split("\\n");
-
-			ErrorEntity errorEntity = ErrorEntity.builder()
-				.OriginClass(OriginClass.CRAWLER_RUNNER)
-				.type(Type.NEWS)
-				.name(null)
-				.exceptionClass(unexpectedException.getClass().getName())
-				.message(arr[0])
-				.createdAt(LocalDateTime.now().toString())
-				.build();
-
-			errorJpaRepository.save(errorEntity);
-
+			errorService.save(errorDTO);
 		}
 	}
 
@@ -228,5 +206,9 @@ public class CrawlerRunner {
 
 			}
 		}
+	}
+
+	public void retryFailedRequests(){
+
 	}
 }

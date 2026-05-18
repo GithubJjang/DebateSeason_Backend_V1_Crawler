@@ -8,8 +8,6 @@ public interface CheckPointProjection { // CheckPoint테이블에서 필요한 �
 	String getName();
 	Integer getSubKey();
 	Integer getCrawlIndex();
-
 	Type getType();
-
 	Status getStatus();
 }

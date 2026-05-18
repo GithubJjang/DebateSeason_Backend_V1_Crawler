@@ -55,4 +55,8 @@ public class ErrorEntity {
 	@Column(name = "created_at", updatable = false, columnDefinition = "TEXT")
 	private String createdAt; // 생성일. SQLite는 날짜 타입이 없어서 -> TEXT로 저장
 
+	// 기본값 0
+	@Column(name = "retry", nullable = false, columnDefinition = "integer default 0")
+	private Integer retry = 0;
+
 }

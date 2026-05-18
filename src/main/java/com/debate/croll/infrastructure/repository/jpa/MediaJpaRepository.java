@@ -1,12 +1,16 @@
 package com.debate.croll.infrastructure.repository.jpa;
 
 import java.util.List;
+import java.util.Optional;
+
+import javax.print.attribute.standard.Media;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.debate.croll.infrastructure.entity.CheckPointEntity;
 import com.debate.croll.infrastructure.entity.MediaEntity;
 
 @Repository
@@ -41,5 +45,16 @@ public interface MediaJpaRepository extends JpaRepository<MediaEntity,Long> {
 		@Param("lastId") long lastId,
 		@Param("limit") int limit
 	);
+
+	@Query(
+		value = """
+		SELECT *
+		FROM check_point
+		ORDER BY updated_at DESC
+		LIMIT 1
+        """,
+		nativeQuery = true
+	)
+	Optional<CheckPointEntity> findLatestMedia();
 
 }

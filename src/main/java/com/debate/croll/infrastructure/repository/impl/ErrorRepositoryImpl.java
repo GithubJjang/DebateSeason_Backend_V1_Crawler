@@ -1,5 +1,6 @@
 package com.debate.croll.infrastructure.repository.impl;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.stereotype.Repository;
@@ -9,12 +10,19 @@ import com.debate.croll.infrastructure.repository.jpa.ErrorJpaRepository;
 import com.debate.croll.infrastructure.entity.ErrorEntity;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RequiredArgsConstructor
 @Repository
 public class ErrorRepositoryImpl implements ErrorRepository {
 
 	private final ErrorJpaRepository errorJpaRepository;
+
+	@Override
+	public void save(ErrorEntity errorEntity) {
+		errorJpaRepository.save(errorEntity);
+	}
 
 	@Override
 	public List<ErrorEntity> findTodayErrors() {
@@ -25,4 +33,5 @@ public class ErrorRepositoryImpl implements ErrorRepository {
 	public Long countTodayErrors() {
 		return errorJpaRepository.countTodayErrors();
 	}
+
 }

@@ -10,11 +10,13 @@ import org.openqa.selenium.WebElement;
 
 import org.springframework.stereotype.Component;
 
+import com.debate.croll.producer.common.ExceptionClassfier;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDtoFactory;
 import com.debate.croll.producer.crawler.source.community.config.CommunityNameList;
 import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.source.community.config.CommunityUrlList;
 import com.debate.croll.producer.crawler.dto.CheckPointDTO;
-import com.debate.croll.producer.crawler.dto.ErrorDTO;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDTO;
 import com.debate.croll.producer.crawler.dto.MediaDTO;
 import com.debate.croll.infrastructure.service.CrawlerApplicationService;
 import com.debate.croll.infrastructure.service.ErrorService;
@@ -37,7 +39,10 @@ public class TodayHumor extends AbstractCommunitySource { // 에러발생
 	private final CrawlerApplicationService crawlerApplicationService;
 	private final ErrorService errorService;
 
+	private final CrawlerErrorDtoFactory crawlerErrorDtoFactory;
 	private final WebDriverFactory webDriverFactory;
+
+	private final ExceptionClassfier exceptionClassfier;
 
 	private final String name = CommunityNameList.TodayHumor.name();
 	private int start = 2;
@@ -69,23 +74,16 @@ public class TodayHumor extends AbstractCommunitySource { // 에러발생
 				Thread.sleep(1500); // 의심을 피하기 위한 설정.
 			}
 		}
-		catch (Exception e){
+		catch (Exception exception){
 
-			String[] arr = e.getMessage().split("\\n");
-
-			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
 				OriginClass.CRAWLER,
 				Type.DRIVER,
 				name,
-				e.getClass().getName(),
-				arr[0],
-				null,
-				LocalDateTime.now().toString()
-			);
+				null);
 
 			errorService.save(errorDTO);
-
-			//Sentry.captureException(e);
 
 		}
 		finally {
@@ -106,27 +104,23 @@ public class TodayHumor extends AbstractCommunitySource { // 에러발생
 	@Transactional
 	public void extractElement(WebDriver driver,int i) {
 
-		try{
+		String href = null;
 
+		try{
 			// body > div.whole_box > div > div > table > tbody > tr:nth-child(2)
 			// body > div.whole_box > div > div > table > tbody > tr:nth-child(2) > td.subject > a
-
 			WebElement webElement = driver.findElement(
 				By.cssSelector("body > div.whole_box > div > div > table > tbody > tr:nth-child(" + i + ")"));
 
 			WebElement hrefElement = webElement.findElement(By.cssSelector("td.subject > a"));
 			String title = hrefElement.getText();
-			String href = hrefElement.getAttribute("href");
+			href = hrefElement.getAttribute("href"); // 주소 url
 
-			// 25/05/06, 16:08 -> 25-05-06 16:08
-			String dateElement = webElement.findElement(By.cssSelector("td.date")).getText();
+			String dateElement = webElement.findElement(By.cssSelector("td.date")).getText(); // 25/05/06, 16:08 -> 25-05-06 16:08
 
-			// 입력 포맷: yy/MM/dd HH:mm
-			DateTimeFormatter inputFormatter =
-				DateTimeFormatter.ofPattern("yy/MM/dd HH:mm");
+			DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yy/MM/dd HH:mm"); // 입력 포맷: yy/MM/dd HH:mm
 
-			// LocalDateTime으로 바로 변환 (25/05/06 → 2025-05-06)
-			LocalDateTime dateTime = LocalDateTime.parse(dateElement.trim(), inputFormatter);
+			LocalDateTime dateTime = LocalDateTime.parse(dateElement.trim(), inputFormatter); // LocalDateTime으로 바로 변환 (25/05/06 → 2025-05-06)
 
 			MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
 				title,
@@ -147,22 +141,21 @@ public class TodayHumor extends AbstractCommunitySource { // 에러발생
 				LocalDateTime.now().toString(),
 				Status.REBOOT
 			);
-
 			crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
 		}
-		catch (Exception e){
+		catch (Exception exception){
 
-			String[] arr = e.getMessage().split("\\n");
+			boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
+			if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
+				href = null;
+			}
 
-			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
 				OriginClass.CRAWLER,
 				Type.COMMUNITY,
 				name,
-				e.getClass().getName(),
-				arr[0],
-				null,
-				LocalDateTime.now().toString()
-			);
+				href);
 
 			errorService.save(errorDTO);
 

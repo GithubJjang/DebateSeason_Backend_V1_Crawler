@@ -12,12 +12,14 @@ import org.openqa.selenium.WebElement;
 
 import org.springframework.stereotype.Component;
 
+import com.debate.croll.producer.common.ExceptionClassfier;
 import com.debate.croll.producer.crawler.dto.CheckPointDTO;
-import com.debate.croll.producer.crawler.dto.ErrorDTO;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDTO;
 import com.debate.croll.producer.crawler.dto.MediaDTO;
 import com.debate.croll.infrastructure.service.CrawlerApplicationService;
 import com.debate.croll.infrastructure.service.ErrorService;
 import com.debate.croll.producer.crawler.common.Type;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDtoFactory;
 import com.debate.croll.webdriver.WebDriverFactory;
 import com.debate.croll.webdriver.WebDriverRunner;
 import com.debate.croll.producer.crawler.source.community.config.CommunityUrlList;
@@ -39,7 +41,10 @@ public class RuliWeb extends AbstractCommunitySource {
 	private final CrawlerApplicationService crawlerApplicationService;
 	private final ErrorService errorService;
 
+	private final CrawlerErrorDtoFactory crawlerErrorDtoFactory;
 	private final WebDriverFactory webDriverFactory;
+
+	private final ExceptionClassfier exceptionClassfier;
 
 	private final String name = CommunityNameList.RuliWeb.name();
 	private int start = 1;
@@ -73,24 +78,16 @@ public class RuliWeb extends AbstractCommunitySource {
 			}
 
 		}
-		catch (Exception e){
+		catch (Exception exception){
 
-			String[] arr = e.getMessage().split("\\n");
-
-			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
 				OriginClass.CRAWLER,
 				Type.DRIVER,
 				name,
-				e.getClass().getName(),
-				arr[0],
-				null,
-				LocalDateTime.now().toString()
-			);
+				null);
 
 			errorService.save(errorDTO);
-
-			//Sentry.captureException(e);
-
 		}
 		finally {
 
@@ -110,16 +107,22 @@ public class RuliWeb extends AbstractCommunitySource {
 	@Transactional
 	public void extractElement(WebDriver driver,int i) {
 
+		String href = null;
+
 		try {
-			// #best_body > table > tbody > tr:nth-child(1) > td.subject > a
+
+			// href & title
 			WebElement element1 = driver.findElement(
-				By.cssSelector("#best_body > table > tbody > tr:nth-child(" + i + ")"));
+				By.cssSelector("#best_body > table > tbody > tr:nth-child(" + i + ")")); // #best_body > table > tbody > tr:nth-child(1) > td.subject > a
 
 			WebElement titleElement = element1.findElement(
 				By.cssSelector("tr:nth-child(" + i + ") > td.subject > a"));
 
-			// #best_body > table > tbody > tr:nth-child(1) > td.time
-			WebElement timeElement = driver.findElement(By.cssSelector("td.time"));
+			href = titleElement.getAttribute("href");
+			String title = titleElement.getText();
+
+			// time
+			WebElement timeElement = driver.findElement(By.cssSelector("td.time")); // #best_body > table > tbody > tr:nth-child(1) > td.time
 
 			// 1) 화면에서 시간 문자열 가져오기 (예: "12:36")
 			String timeText = timeElement.getText().trim();  // "12:36" 가정
@@ -137,11 +140,6 @@ public class RuliWeb extends AbstractCommunitySource {
 			localDateTime = localDateTime
 				.withSecond(second)
 				.withNano(0);
-
-			String title = titleElement.getText();
-			String href = titleElement.getAttribute("href");
-
-
 
 			MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
 				title,
@@ -166,19 +164,19 @@ public class RuliWeb extends AbstractCommunitySource {
 			crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
 
 		}
-		catch (Exception e){
+		catch (Exception exception){
 
-			String[] arr = e.getMessage().split("\\n");
+			boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
+			if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
+				href = null;
+			}
 
-			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
 				OriginClass.CRAWLER,
 				Type.COMMUNITY,
 				name,
-				e.getClass().getName(),
-				arr[0],
-				null,
-				LocalDateTime.now().toString()
-			);
+				href);
 
 			errorService.save(errorDTO);
 

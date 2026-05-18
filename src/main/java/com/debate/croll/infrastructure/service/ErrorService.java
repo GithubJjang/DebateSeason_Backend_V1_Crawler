@@ -1,11 +1,14 @@
 package com.debate.croll.infrastructure.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
+import com.debate.croll.domain.repository.ErrorRepository;
+
 import com.debate.croll.producer.crawler.mapper.error.ErrorMapper;
-import com.debate.croll.producer.crawler.dto.ErrorDTO;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDTO;
 import com.debate.croll.infrastructure.entity.ErrorEntity;
-import com.debate.croll.infrastructure.repository.jpa.ErrorJpaRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -13,11 +16,10 @@ import lombok.RequiredArgsConstructor;
 @Service
 public class ErrorService {
 
-	private final ErrorJpaRepository errorJpaRepository;
-	public void save(ErrorDTO.CreateErrorDTO errorDTO){
-
-		ErrorEntity errorEntity = ErrorMapper.toEntity(errorDTO);
-
-		errorJpaRepository.save(errorEntity);
+	private final ErrorRepository errorRepository;
+	public void save(CrawlerErrorDTO crawlerErrorDTO){
+		ErrorEntity errorEntity = ErrorMapper.toEntity(crawlerErrorDTO);
+		errorRepository.save(errorEntity);
 	}
+
 }

@@ -10,9 +10,11 @@ import org.openqa.selenium.WebElement;
 
 import org.springframework.stereotype.Component;
 
+import com.debate.croll.producer.common.ExceptionClassfier;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDtoFactory;
 import com.debate.croll.producer.crawler.source.community.config.CommunityUrlList;
 import com.debate.croll.producer.crawler.dto.CheckPointDTO;
-import com.debate.croll.producer.crawler.dto.ErrorDTO;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDTO;
 import com.debate.croll.producer.crawler.dto.MediaDTO;
 import com.debate.croll.infrastructure.service.CrawlerApplicationService;
 import com.debate.croll.infrastructure.service.ErrorService;
@@ -37,7 +39,10 @@ public class Ppompu extends AbstractCommunitySource {
 	private final CrawlerApplicationService crawlerApplicationService;
 	private final ErrorService errorService;
 
+	private final CrawlerErrorDtoFactory crawlerErrorDtoFactory;
 	private final WebDriverFactory webDriverFactory;
+
+	private final ExceptionClassfier exceptionClassfier;
 
 	private final String name = CommunityNameList.Ppompu.name();
 
@@ -70,19 +75,14 @@ public class Ppompu extends AbstractCommunitySource {
 				Thread.sleep(1500);
 			}
 		}
-		catch (Exception e){
+		catch (Exception exception){
 
-			String[] arr = e.getMessage().split("\\n");
-
-			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
 				OriginClass.CRAWLER,
 				Type.DRIVER,
 				name,
-				e.getClass().getName(),
-				arr[0],
-				null,
-				LocalDateTime.now().toString()
-			);
+				null);
 
 			errorService.save(errorDTO);
 
@@ -109,11 +109,17 @@ public class Ppompu extends AbstractCommunitySource {
 		// body > div.wrapper > div.contents > div.container > div > div.board_box > table > tbody > tr:nth-child(4)
 		// body > div.wrapper > div.contents > div.container > div > div.board_box > table > tbody > tr:nth-child(5)
 
+		String href = null;
+
 		try {
 			//#revolution_main_table > tbody > tr:nth-child(11) > td:nth-child(2) > img.baseList-img
 			WebElement e = driver.findElement(By.cssSelector("body > div.wrapper > div.contents > div.container > div > div.board_box > table > tbody > tr:nth-child("+i+")"));
 
-			// 이미지 주소 추출하기
+			// href & title
+			href = e.findElement(By.cssSelector("td.baseList-space.title > a")).getAttribute("href");
+			String title = e.findElement(By.cssSelector("td.baseList-space.title > div > div > a:nth-child(2)")).getText();
+
+			// image
 			String src = null;
 			try{
 				WebElement imageElement = e.findElement(By.cssSelector("td.baseList-space.title > a > img"));
@@ -123,11 +129,7 @@ public class Ppompu extends AbstractCommunitySource {
 
 			}
 
-
-			String href = e.findElement(By.cssSelector("td.baseList-space.title > a")).getAttribute("href");
-
-			String title = e.findElement(By.cssSelector("td.baseList-space.title > div > div > a:nth-child(2)")).getText();
-
+			// time
 			String beforeTime = e.findElement(By.cssSelector("td:nth-child(5)")).getText();
 
 			// time 가공
@@ -168,19 +170,19 @@ public class Ppompu extends AbstractCommunitySource {
 			crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
 
 		}
-		catch (Exception e){
+		catch (Exception exception){
 
-			String[] arr = e.getMessage().split("\\n");
+			boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
+			if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
+				href = null;
+			}
 
-			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
 				OriginClass.CRAWLER,
 				Type.COMMUNITY,
 				name,
-				e.getClass().getName(),
-				arr[0],
-				null,
-				LocalDateTime.now().toString()
-			);
+				href);
 
 			errorService.save(errorDTO);
 

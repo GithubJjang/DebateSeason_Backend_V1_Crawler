@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class CrawlerRestartManager {
+public class CrawlerRecoveryManager {
 
 	private final CheckPointService checkPointService;
 	private final CrawlerRunner crawlerRunner;
@@ -48,4 +48,5 @@ public class CrawlerRestartManager {
 		}
 
 	}
+
 }

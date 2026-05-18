@@ -10,10 +10,12 @@ import org.openqa.selenium.WebElement;
 
 import org.springframework.stereotype.Component;
 
+import com.debate.croll.producer.common.ExceptionClassfier;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDtoFactory;
 import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.source.community.config.CommunityUrlList;
 import com.debate.croll.producer.crawler.dto.CheckPointDTO;
-import com.debate.croll.producer.crawler.dto.ErrorDTO;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDTO;
 import com.debate.croll.producer.crawler.dto.MediaDTO;
 import com.debate.croll.infrastructure.service.CrawlerApplicationService;
 import com.debate.croll.infrastructure.service.ErrorService;
@@ -37,7 +39,10 @@ public class MlbPark extends AbstractCommunitySource {
 	private final CrawlerApplicationService crawlerApplicationService;
 	private final ErrorService errorService;
 
+	private final CrawlerErrorDtoFactory crawlerErrorDtoFactory;
 	private final WebDriverFactory webDriverFactory;
+
+	private final ExceptionClassfier exceptionClassfier;
 
 	private final String name = CommunityNameList.MlbPark.name();
 	private int start = 1;
@@ -70,19 +75,14 @@ public class MlbPark extends AbstractCommunitySource {
 				Thread.sleep(1500); // 의심을 피하기 위한 설정.
 			}
 		}
-		catch (Exception e){
+		catch (Exception exception){
 
-			String[] arr = e.getMessage().split("\\n");
-
-			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
 				OriginClass.CRAWLER,
 				Type.DRIVER,
 				name,
-				e.getClass().getName(),
-				arr[0],
-				null,
-				LocalDateTime.now().toString()
-			);
+				null);
 
 			errorService.save(errorDTO);
 
@@ -105,19 +105,20 @@ public class MlbPark extends AbstractCommunitySource {
 	@Transactional
 	public void extractElement(WebDriver driver,int i) {
 
+		String href = null;
+
 		try {
 
 			WebElement webElement = driver.findElement(By.cssSelector(
 				"#container > div.contents > div.left_cont > div > div.tab_contents > div.tbl_box > table > tbody > tr:nth-child("
 					+ i + ")"));
 
-			//String id = webElement.findElement(By.cssSelector("td:nth-child(1)")).getText();
-
 			WebElement titleElement = webElement.findElement(By.cssSelector("td:nth-child(2) > a"));
+			href = titleElement.getAttribute("href");
 			String title = titleElement.getText();
 
-			String href = titleElement.getAttribute("href");
 
+			//String id = webElement.findElement(By.cssSelector("td:nth-child(1)")).getText();
 			//String date = webElement.findElement(By.cssSelector("td:nth-child(4) > span")).getText();
 
 			LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
@@ -145,23 +146,21 @@ public class MlbPark extends AbstractCommunitySource {
 			crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
 
 		}
-		catch (Exception e) {
+		catch (Exception exception) {
 
-			String[] arr = e.getMessage().split("\\n");
+			boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
+			if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
+				href = null;
+			}
 
-			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
 				OriginClass.CRAWLER,
 				Type.COMMUNITY,
 				name,
-				e.getClass().getName(),
-				arr[0],
-				null,
-				LocalDateTime.now().toString()
-			);
+				href);
 
 			errorService.save(errorDTO);
-
-			//Sentry.captureException(e);
 
 		}
 

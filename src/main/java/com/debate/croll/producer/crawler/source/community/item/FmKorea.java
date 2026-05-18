@@ -12,11 +12,13 @@ import org.openqa.selenium.WebElement;
 
 import org.springframework.stereotype.Component;
 
+import com.debate.croll.producer.common.ExceptionClassfier;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDtoFactory;
 import com.debate.croll.producer.crawler.source.community.config.CommunityNameList;
 import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.source.community.config.CommunityUrlList;
 import com.debate.croll.producer.crawler.dto.CheckPointDTO;
-import com.debate.croll.producer.crawler.dto.ErrorDTO;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDTO;
 import com.debate.croll.producer.crawler.dto.MediaDTO;
 import com.debate.croll.infrastructure.service.CrawlerApplicationService;
 import com.debate.croll.infrastructure.service.ErrorService;
@@ -40,7 +42,10 @@ public class FmKorea extends AbstractCommunitySource {
 	private final CrawlerApplicationService crawlerApplicationService;
 	private final ErrorService errorService;
 
+	private final CrawlerErrorDtoFactory crawlerErrorDtoFactory;
 	private final WebDriverFactory webDriverFactory;
+
+	private final ExceptionClassfier exceptionClassfier;
 
 	private final String name = CommunityNameList.FmKorea.name();
 
@@ -74,24 +79,16 @@ public class FmKorea extends AbstractCommunitySource {
 				Thread.sleep(1500); // 의심을 피하기 위한 설정.
 			}
 		}
-		catch (Exception e){
+		catch (Exception exception){
 
-			String[] arr = e.getMessage().split("\\n");
-
-			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
 				OriginClass.CRAWLER,
 				Type.DRIVER,
 				name,
-				e.getClass().getName(),
-				arr[0],
-				null,
-				LocalDateTime.now().toString()
-			);
+				null);
 
 			errorService.save(errorDTO);
-
-			//Sentry.captureException(e);
-
 		}
 		finally {
 
@@ -106,17 +103,17 @@ public class FmKorea extends AbstractCommunitySource {
 	@Transactional
 	public void extractElement(WebDriver driver,int i) {
 
-		try{
+		String href = null;
 
+		try{
+			// title & href
 			WebElement titleElement = driver.findElement(By.cssSelector(
 				"#bd_4180795_0 > div > div.fm_best_widget._bd_pc > ul > li:nth-child(" + i + ") > div > h3 > a"));
-			WebElement timeElement = driver.findElement(By.cssSelector(
-				"#bd_4180795_0 > div > div.fm_best_widget._bd_pc > ul > li:nth-child(" + i
-					+ ") > div > div:nth-child(5) > span.regdate"));
+			href = titleElement.getAttribute("href");
+			String title = titleElement.getText();
 
+			// image
 			String src = null;// 이미지
-
-			// 이미지가 null이면 null인 상태로 넘어간다.
 			try {
 				WebElement imgElement = driver.findElement(By.cssSelector(
 					"#bd_4180795_0 > div > div.fm_best_widget._bd_pc > ul > li:nth-child(" + i
@@ -124,19 +121,15 @@ public class FmKorea extends AbstractCommunitySource {
 
 				src = imgElement.getAttribute("src");
 			} catch (NoSuchElementException e) {// 이미지가 없는 경우, NoSuchElementException 발생.
-
 			}
 
+			// time
+			WebElement timeElement = driver.findElement(By.cssSelector(
+				"#bd_4180795_0 > div > div.fm_best_widget._bd_pc > ul > li:nth-child(" + i
+					+ ") > div > div:nth-child(5) > span.regdate"));
 			String timeString = LocalDate.now() + " " + timeElement.getText();
-
-			// Create a DateTimeFormatter with the appropriate pattern
-			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
-
-			// Parse the string to a LocalDateTime object
-			LocalDateTime dateTime = LocalDateTime.parse(timeString, formatter);
-
-			String title = titleElement.getText();
-			String href = titleElement.getAttribute("href");
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"); // Create a DateTimeFormatter with the appropriate pattern
+			LocalDateTime dateTime = LocalDateTime.parse(timeString, formatter); // Parse the string to a LocalDateTime object
 
 			MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
 				title,
@@ -161,19 +154,19 @@ public class FmKorea extends AbstractCommunitySource {
 			crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
 
 		}
-		catch (Exception e){
+		catch (Exception exception){
 
-			String[] arr = e.getMessage().split("\\n");
+			boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
+			if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
+				href = null;
+			}
 
-			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
 				OriginClass.CRAWLER,
 				Type.COMMUNITY,
 				name,
-				e.getClass().getName(),
-				arr[0],
-				null,
-				LocalDateTime.now().toString()
-			);
+				href);
 
 			errorService.save(errorDTO);
 

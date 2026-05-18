@@ -5,9 +5,10 @@ import java.time.LocalDateTime;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.debate.croll.producer.crawler.dto.ErrorDTO;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDTO;
 import com.debate.croll.infrastructure.service.CheckPointService;
 import com.debate.croll.infrastructure.service.ErrorService;
+import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDtoFactory;
 import com.debate.croll.producer.crawler.manager.CrawlerRunner;
 import com.debate.croll.producer.crawler.common.OriginClass;
 import com.debate.croll.producer.crawler.common.Type;
@@ -21,17 +22,19 @@ import lombok.extern.slf4j.Slf4j;
 public class CrawlerScheduler {
 
 	private final CrawlerRunner crawlerRunner;
+	private final CrawlerErrorDtoFactory crawlerErrorDtoFactory;
 
 	private final CheckPointService checkPointService;
 	private final ErrorService errorService;
 
 	//@Scheduled(initialDelay = 15000,fixedDelay = 86400000)
 	//@Scheduled(cron = "0 18 13 * * ?", zone = "Asia/Seoul")
-	//@Scheduled(fixedDelay = 86400000)
-	@Scheduled(cron = "0 0 17 * * ?",zone = "Asia/Seoul")
+	@Scheduled(fixedDelay = 86400000)
+	//@Scheduled(cron = "0 0 17 * * ?",zone = "Asia/Seoul")
 	public void crawl(){
 
 		try{
+
 			// 1. 커뮤니티 크롤링
 			crawlerRunner.startCommunityCrawler();
 
@@ -41,20 +44,16 @@ public class CrawlerScheduler {
 			// 3. 마지막 체크포인트 업데이트
 			checkPointService.updateLastCheckPoint();
 
+
 		}
-		catch (Exception e){
+		catch (Exception exception){
 
-			String[] arr = e.getMessage().split("\\n");
-
-			ErrorDTO.CreateErrorDTO errorDTO = new ErrorDTO.CreateErrorDTO(
+			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+				exception,
 				OriginClass.SCHEDULER,
 				Type.DRIVER,
 				null,
-				e.getClass().getName(),
-				arr[0],
-				null,
-				LocalDateTime.now().toString()
-			);
+				null);
 
 			errorService.save(errorDTO);
 
