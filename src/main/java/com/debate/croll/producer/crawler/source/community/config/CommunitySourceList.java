@@ -43,7 +43,6 @@ public class CommunitySourceList {
 		sourceList.add(ppompu);
 		sourceList.add(ruliWeb);
 		sourceList.add(todayHumor);
-
 	}
 
 	// @Getter를 쓰면, 위 필드변수 다 반환을 해야함. -> 캡슐화 안됨.

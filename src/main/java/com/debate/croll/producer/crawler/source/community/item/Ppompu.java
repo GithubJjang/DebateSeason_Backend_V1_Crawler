@@ -1,7 +1,11 @@
 package com.debate.croll.producer.crawler.source.community.item;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -70,10 +74,10 @@ public class Ppompu extends AbstractCommunitySource {
 
 		try{
 			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-			for(int i=start; i<4+CommunityConfig.COMMUNITY_CRAWL_LIMIT; i++){
-				extractElement(driver,i);
-				Thread.sleep(1500);
-			}
+
+			extractElement(driver,-1);
+			Thread.sleep(1500);
+
 		}
 		catch (Exception exception){
 
@@ -103,92 +107,95 @@ public class Ppompu extends AbstractCommunitySource {
 
 	}
 
-	@Transactional
 	public void extractElement(WebDriver driver, int i) {
 
-		// body > div.wrapper > div.contents > div.container > div > div.board_box > table > tbody > tr:nth-child(4)
-		// body > div.wrapper > div.contents > div.container > div > div.board_box > table > tbody > tr:nth-child(5)
-
 		String href = null;
+		String src = null;
 
+		int count = 0;
+
+		List<WebElement> items;
 		try {
-			//#revolution_main_table > tbody > tr:nth-child(11) > td:nth-child(2) > img.baseList-img
-			WebElement e = driver.findElement(By.cssSelector("body > div.wrapper > div.contents > div.container > div > div.board_box > table > tbody > tr:nth-child("+i+")"));
-
-			// href & title
-			href = e.findElement(By.cssSelector("td.baseList-space.title > a")).getAttribute("href");
-			String title = e.findElement(By.cssSelector("td.baseList-space.title > div > div > a:nth-child(2)")).getText();
-
-			// image
-			String src = null;
-			try{
-				WebElement imageElement = e.findElement(By.cssSelector("td.baseList-space.title > a > img"));
-				src = imageElement.getAttribute("src") != null ? imageElement.getAttribute("src") : null;
-			}
-			catch (NoSuchElementException exception){
-
-			}
-
-			// time
-			String beforeTime = e.findElement(By.cssSelector("td:nth-child(5)")).getText();
-
-			// time 가공
-			LocalDateTime now = LocalDateTime.now().withNano(0);
-
-			// beforeTime 파싱 (hh:mm:ss)
-			String[] parts = beforeTime.split(":");
-			int hh = Integer.parseInt(parts[0]);
-			int mm = Integer.parseInt(parts[1]);
-			int ss = Integer.parseInt(parts[2]);
-
-			// 날짜는 today 유지, 시간만 교체
-			LocalDateTime localDateTime = now
-				.withHour(hh)
-				.withMinute(mm)
-				.withSecond(ss);
-
-			MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
-				title,
-				href,
-				src,
-				"정치",
-				CommunityNameList.Ppompu.getName(),
-				Type.COMMUNITY.getName(),
-				0,
-				localDateTime.toString()
-			);
-
-			CheckPointDTO.CreateCheckPointDTO checkPointDTO = new CheckPointDTO.CreateCheckPointDTO(
-				name,
-				null,
-				i,
-				Type.COMMUNITY,
-				LocalDateTime.now().toString(),
-				Status.REBOOT
-			);
-
-			crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
-
+			items = driver.findElements(By.cssSelector(".baseList.bbs_new1"));
 		}
-		catch (Exception exception){
+		catch (NoSuchElementException e){
+			throw new java.util.NoSuchElementException("items을 찾을 수 없습니다. 페이지 요소 변경이 의심됩니다.");
+		}
 
-			boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
-			if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
-				href = null;
+		for(WebElement e : items){
+
+			if(count>=8){
+				break;
 			}
 
-			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
-				exception,
-				OriginClass.CRAWLER,
-				Type.COMMUNITY,
-				name,
-				href);
+			try {
+				WebElement thumbElement = e.findElement(By.className("baseList-thumb"));
+				href = thumbElement.getAttribute("href");
 
-			errorService.save(errorDTO);
+				WebElement imageElement = thumbElement.findElement(By.tagName("img"));
+				src = imageElement.getAttribute("src");
 
-			//Sentry.captureException(e);
+				List<WebElement> titleElement = e.findElements(By.className("baseList-title"));
+				String title = titleElement.get(1).getText();
+
+				WebElement timeElement =
+					e.findElements(
+						By.cssSelector(".baseList-space.board_date")
+					).get(0);
+				String strTime = timeElement.getText();
+
+				LocalDate today = LocalDate.now();
+				LocalTime time = LocalTime.parse(strTime);
+
+				LocalDateTime dateTime =
+					LocalDateTime.of(today, time);
+
+				MediaDTO mediaDTO = new MediaDTO(
+					title,
+					href,
+					src,
+					"정치",
+					CommunityNameList.Ppompu.getName(),
+					Type.COMMUNITY.getName(),
+					0,
+					dateTime.toString()
+				);
+
+				CheckPointDTO checkPointDTO = new CheckPointDTO(
+					name,
+					null,
+					i,
+					Type.COMMUNITY,
+					LocalDateTime.now().toString(),
+					Status.REBOOT
+				);
+
+				crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
+			}
+			catch (Exception exception){
+
+				boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
+				if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
+					href = null;
+				}
+
+				CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+					exception,
+					OriginClass.CRAWLER,
+					Type.COMMUNITY,
+					name,
+					href);
+
+				errorService.save(errorDTO);
+
+				//Sentry.captureException(e);
+			}
+			finally {
+				count++;
+				href=null;
+				src = null;
+			}
 		}
 
 	}
-
 }

@@ -107,23 +107,29 @@ public class HumorUniv extends AbstractCommunitySource {
 
 	}
 
-	@Transactional
 	public void extractElement(WebDriver driver,int i) {
 
 		String href = null;
 		String src = null;
 
-		try {
+		int count = 0;
 
-			List<WebElement> webElements = driver.findElements(By.className("post_item"));
+		List<WebElement> webElements;
 
-			int count = 0;
+		try{
+			webElements = driver.findElements(By.className("post_item"));
+		}
+		catch (NoSuchElementException e){
+			throw new java.util.NoSuchElementException("items을 찾을 수 없습니다. 페이지 요소 변경이 의심됩니다.");
+		}
 
-			for(WebElement e : webElements){
+		for(WebElement e : webElements){
 
-				if(count==8){
-					break;
-				}
+			if(count==8){
+				break;
+			}
+
+			try {
 
 				// 1. href
 				WebElement rawHref = e.findElement(
@@ -185,7 +191,7 @@ public class HumorUniv extends AbstractCommunitySource {
 				LocalDateTime dateTime =
 					targetDate != null ? targetDate.atTime(hour, minute) : null;
 
-				MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
+				MediaDTO mediaDTO = new MediaDTO(
 					title,
 					href, // 링크
 					src, // 이미지
@@ -196,7 +202,7 @@ public class HumorUniv extends AbstractCommunitySource {
 					dateTime.toString()
 				);
 
-				CheckPointDTO.CreateCheckPointDTO checkPointDTO = new CheckPointDTO.CreateCheckPointDTO(
+				CheckPointDTO checkPointDTO = new CheckPointDTO(
 					name,
 					null,
 					i,
@@ -207,100 +213,30 @@ public class HumorUniv extends AbstractCommunitySource {
 
 				crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
 
-				count ++;
 			}
+			catch (Exception exception){
 
-			// Legacy
-			// WebElement webElement = driver.findElement(
-			// 	By.cssSelector("#list_body > ul > a:nth-child(" + (init + i * 2) + ")"));
-			//
-			// // href
-			// href = driver.findElement(
-			// 	By.cssSelector("#list_body > ul > a:nth-child(" + (init + i * 2) + ")")).getAttribute("href");
-			//
-			// // title
-			// WebElement idElement = webElement.findElement(By.cssSelector("li"));
-			// String id = idElement.getAttribute("id");
-			//
-			// String numberOnly = id.replaceAll("[^0-9]", ""); // 숫자가 아닌 문자를 모두 제거
-			// String title = driver.findElement(By.cssSelector("#title_chk_pds-" + numberOnly)).getText(); //#title_chk_pds-1366802
-			//
-			//
-			// // src
-			// String src = null;//이미지
-			// try{
-			// 	src = driver.findElement(
-			// 			By.cssSelector("#" + id + "> table > tbody > tr > td:nth-child(1) > div > img"))
-			// 			.getAttribute("src");
-			// }
-			// catch (NoSuchElementException e){
-			//
-			// }
-			//
-			// // time
-			// String time = driver.findElement(
-			// 	By.cssSelector("#" + id + "> table > tbody > tr > td:nth-child(2) > div > span.extra")).getText();
-			//
-			// // 2. 시간 부분만 추출
-			// String timePart = time.split(" ")[1]; // "07:31"
-			//
-			// // 3. 시:분 파싱
-			// DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-			// LocalTime parsedTime = LocalTime.parse(timePart, timeFormatter);
-			//
-			// // 4. 현재 날짜에 시:분만 교체
-			// LocalDateTime now = LocalDateTime.now();
-			// LocalDateTime updatedDateTime = now
-			// 	.withHour(parsedTime.getHour())
-			// 	.withMinute(parsedTime.getMinute())
-			// 	.withSecond(0)
-			// 	.withNano(0);
+				boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
+				if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
+					href = null;
+				}
 
+				CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+					exception,
+					OriginClass.CRAWLER,
+					Type.COMMUNITY,
+					name,
+					href);
 
+				errorService.save(errorDTO);
 
-
-
-			// MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
-			// 	title,
-			// 	href,
-			// 	src,
-			// 	"정치",
-			// 	CommunityNameList.HumorUniv.getName(),
-			// 	Type.COMMUNITY.getName(),
-			// 	0,
-			// 	updatedDateTime.toString()
-			// );
-			//
-			// CheckPointDTO.CreateCheckPointDTO checkPointDTO = new CheckPointDTO.CreateCheckPointDTO(
-			// 	name,
-			// 	null,
-			// 	i,
-			// 	Type.COMMUNITY,
-			// 	LocalDateTime.now().toString(),
-			// 	Status.REBOOT
-			// );
-			//
-			// crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
-
-		}
-		catch (Exception exception){
-
-			boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
-			if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
-				href = null;
 			}
-
-			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
-				exception,
-				OriginClass.CRAWLER,
-				Type.COMMUNITY,
-				name,
-				href);
-
-			errorService.save(errorDTO);
-
+			finally {
+				count++;
+				href=null;
+				src = null;
+			}
 		}
-
 	}
 
 }

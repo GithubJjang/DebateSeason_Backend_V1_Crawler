@@ -3,9 +3,10 @@ package com.debate.croll.producer.crawler.source.community.item;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-
+import java.util.List;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
@@ -74,11 +75,8 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 		try{
 			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
 
-			for (int i = start; i <= CommunityConfig.COMMUNITY_CRAWL_LIMIT; i++) { // 총 5회 실행을 하면서, 매번 필요한 요소를 찾는다.
-				extractElement(driver,i);
-				Thread.sleep(1500);
-			}
-
+			extractElement(driver,-1);
+			Thread.sleep(1500);
 		}
 		catch (Exception exception){
 
@@ -95,81 +93,98 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 		finally {
 
 			if (driver != null) {
-
 				driver.quit();
 				Thread.sleep(3000); // 의도적인 컨텍스트 스위칭 유발로, 다른 스레드 작업 처리를 위한 목적.
 				log.info("successfully shut driver");
-
 			}
-
 		}
-
 	}
 
-	// 가독성을 위해서 분리.
-	@Transactional // 리부팅 시 복구를 위해서, 매 트랜잭션 순간마다 기록을 한다.
 	public void extractElement(WebDriver driver,int i) {
 
 		String href = null;
 
+		int count = 0;
+		List<WebElement> rows;
+
 		try{
+			WebElement boardListWebElement = driver.findElement(By.cssSelector("#boardlist tbody"));
+			rows = boardListWebElement.findElements(By.tagName("tr"));
+		}
+		catch (NoSuchElementException e){
+			throw new java.util.NoSuchElementException("items을 찾을 수 없습니다. 페이지 요소 변경이 의심됩니다.");
+		}
 
-			WebElement webElement = driver.findElement(
-				By.cssSelector("#boardlist > tbody > tr:nth-child(+" + i + ")"));
+		for(WebElement td:rows){
 
-			WebElement titleElement = webElement.findElement(By.cssSelector("td.pl14 > a.bsubject"));
-			href = titleElement.getAttribute("href");
-			String title = titleElement.getText();
-			String time = webElement.findElement(By.cssSelector("td.date")).getText();
-			LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
-
-			// 문자열에서 시와 분 파싱
-			int hour = Integer.parseInt(time.split(":")[0]);
-			int minute = Integer.parseInt(time.split(":")[1]);
-
-			// 시:분만 21:42로 덮어쓰기, 초와 나노초는 유지
-			LocalDateTime replaced = now.withHour(hour).withMinute(minute);
-
-			MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
-				title,
-				href,
-				null,
-				"사회",
-				CommunityNameList.BobaeDream.getName(),
-				Type.COMMUNITY.getName(),
-				0,
-				replaced.toString()
-			);
-
-			CheckPointDTO.CreateCheckPointDTO checkPointDTO = new CheckPointDTO.CreateCheckPointDTO(
-				name,
-				null,
-				i,
-				Type.COMMUNITY,
-				LocalDateTime.now().toString(),
-				Status.REBOOT
-			);
-
-			crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
-
-		} catch (Exception exception){
-
-			boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
-			if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
-				href = null;
+			if(count>=8){
+				break;
 			}
 
-			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
-				exception,
-				OriginClass.CRAWLER,
-				Type.COMMUNITY,
-				name,
-				href);
+			try {
 
-			errorService.save(errorDTO);
+				WebElement titleElement = td.findElement(By.className("bsubject"));
+				String title = titleElement.getText();
+				href = titleElement.getAttribute("href");
 
-			//Sentry.captureException(e);
+				WebElement dateElement = td.findElement(By.className("date"));
+				String time = dateElement.getText();
+
+				LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+
+				// 문자열에서 시와 분 파싱
+				int hour = Integer.parseInt(time.split(":")[0]);
+				int minute = Integer.parseInt(time.split(":")[1]);
+
+				// 시:분만 21:42로 덮어쓰기, 초와 나노초는 유지
+				LocalDateTime replaced = now.withHour(hour).withMinute(minute);
+
+				MediaDTO mediaDTO = new MediaDTO(
+					title,
+					href,
+					null,
+					"사회",
+					CommunityNameList.BobaeDream.getName(),
+					Type.COMMUNITY.getName(),
+					0,
+					replaced.toString()
+				);
+
+				CheckPointDTO checkPointDTO = new CheckPointDTO(
+					name,
+					null,
+					i,
+					Type.COMMUNITY,
+					LocalDateTime.now().toString(),
+					Status.REBOOT
+				);
+
+				crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);// @Transactional 걸어서 media & checkpoint 안전하게 저장
+
+			}
+			catch (Exception exception){
+
+				boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
+				if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
+					href = null;
+				}
+
+				CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+					exception,
+					OriginClass.CRAWLER,
+					Type.COMMUNITY,
+					name,
+					href);
+
+				errorService.save(errorDTO);
+				//Sentry.captureException(e);
+			}
+			finally {
+				count++;
+				href=null;
+			}
 		}
+
 
 	}
 

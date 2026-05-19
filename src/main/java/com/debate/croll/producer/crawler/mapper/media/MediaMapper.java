@@ -6,7 +6,7 @@ import com.debate.croll.infrastructure.entity.MediaEntity;
 public class MediaMapper {
 
 	// 1. DTO -> 엔티티로 전환
-	public static MediaEntity toEntity(MediaDTO.CreateMediaDTO dto) {
+	public static MediaEntity toEntity(MediaDTO dto) {
 
 		return MediaEntity.builder()
 			.title(dto.title())

@@ -5,8 +5,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
@@ -71,11 +73,9 @@ public class RuliWeb extends AbstractCommunitySource {
 
 		try{
 			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-			for(int i=start; i<=CommunityConfig.COMMUNITY_CRAWL_LIMIT; i++){
-				extractElement(driver,i);
-				Thread.sleep(1500); // 의심을 피하기 위한 설정.
 
-			}
+			extractElement(driver,-1);
+			Thread.sleep(1500); // 의심을 피하기 위한 설정.
 
 		}
 		catch (Exception exception){
@@ -97,93 +97,102 @@ public class RuliWeb extends AbstractCommunitySource {
 				Thread.sleep(3000); // 의도적인 컨텍스트 스위칭 유발로, 다른 스레드 작업 처리를 위한 목적.
 				log.info("successfully shut driver");
 			}
-
 		}
-
-
-
 	}
 
-	@Transactional
 	public void extractElement(WebDriver driver,int i) {
 
 		String href = null;
 
+		int count = 0;
+
+		List<WebElement> elements;
 		try {
-
-			// href & title
-			WebElement element1 = driver.findElement(
-				By.cssSelector("#best_body > table > tbody > tr:nth-child(" + i + ")")); // #best_body > table > tbody > tr:nth-child(1) > td.subject > a
-
-			WebElement titleElement = element1.findElement(
-				By.cssSelector("tr:nth-child(" + i + ") > td.subject > a"));
-
-			href = titleElement.getAttribute("href");
-			String title = titleElement.getText();
-
-			// time
-			WebElement timeElement = driver.findElement(By.cssSelector("td.time")); // #best_body > table > tbody > tr:nth-child(1) > td.time
-
-			// 1) 화면에서 시간 문자열 가져오기 (예: "12:36")
-			String timeText = timeElement.getText().trim();  // "12:36" 가정
-
-			// 2) "HH:mm" 형식으로 파싱
-			DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
-			LocalTime parsedTime = LocalTime.parse(timeText, timeFormatter);  // 12:36
-
-			// 3) 오늘 날짜 + 파싱한 시간으로 LocalDateTime 생성
-			LocalDate today = LocalDate.now();   // 필요하면 ZoneId.of("Asia/Seoul") 고려
-			LocalDateTime localDateTime = LocalDateTime.of(today, parsedTime);
-
-			// 4) 초(second)는 지금 기준으로 맞추고 싶으면 이렇게
-			int second = LocalTime.now().getSecond();
-			localDateTime = localDateTime
-				.withSecond(second)
-				.withNano(0);
-
-			MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
-				title,
-				href,
-				null,
-				"정치",
-				CommunityNameList.RuliWeb.getName(),
-				Type.COMMUNITY.getName(),
-				0,
-				localDateTime.toString()
-			);
-
-			CheckPointDTO.CreateCheckPointDTO checkPointDTO = new CheckPointDTO.CreateCheckPointDTO(
-				name,
-				null,
-				i,
-				Type.COMMUNITY,
-				LocalDateTime.now().toString(),
-				Status.REBOOT
-			);
-
-			crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
-
+			elements =
+				driver.findElements(By.cssSelector(".table_body.blocktarget"));
 		}
-		catch (Exception exception){
+		catch (NoSuchElementException e){
+			throw new java.util.NoSuchElementException("items을 찾을 수 없습니다. 페이지 요소 변경이 의심됩니다.");
+		}
 
-			boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
-			if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
-				href = null;
+		for(WebElement e : elements){
+
+			if(count>=8){
+				break;
 			}
 
-			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
-				exception,
-				OriginClass.CRAWLER,
-				Type.COMMUNITY,
-				name,
-				href);
+			try {
+				WebElement hrefElement =
+					e.findElement(
+						By.cssSelector(".subject_link.deco.flex.center")
+					);
 
-			errorService.save(errorDTO);
+				href = hrefElement.getAttribute("href"); // 직계 자손으로 해야 됨.
 
-			//Sentry.captureException(e);
+				WebElement titleElement =
+					hrefElement.findElement(
+						By.className("text_over")
+					);
+
+				String title = titleElement.getText();
+
+				WebElement timeElement =
+					e.findElement(By.className("time"));
+
+				String strTime = timeElement.getText().trim();
+
+				LocalDate today = LocalDate.now();
+				LocalTime time = LocalTime.parse(strTime);
+
+				LocalDateTime dateTime =
+					LocalDateTime.of(today, time);
+
+				MediaDTO mediaDTO = new MediaDTO(
+					title,
+					href,
+					null,
+					"정치",
+					CommunityNameList.RuliWeb.getName(),
+					Type.COMMUNITY.getName(),
+					0,
+					dateTime.toString()
+				);
+
+				CheckPointDTO checkPointDTO = new CheckPointDTO(
+					name,
+					null,
+					i,
+					Type.COMMUNITY,
+					LocalDateTime.now().toString(),
+					Status.REBOOT
+				);
+
+				crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
+			}
+			catch (Exception exception){
+
+				boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
+				if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
+					href = null;
+				}
+
+				CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+					exception,
+					OriginClass.CRAWLER,
+					Type.COMMUNITY,
+					name,
+					href);
+
+				errorService.save(errorDTO);
+
+				//Sentry.captureException(e);
+
+			}
+			finally {
+				count++;
+				href=null;
+			}
 
 		}
-
 	}
-
 }

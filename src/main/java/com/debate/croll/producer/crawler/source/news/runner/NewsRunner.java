@@ -153,7 +153,7 @@ public class NewsRunner {
 			};
 
 
-			MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
+			MediaDTO mediaDTO = new MediaDTO(
 				title,
 				href,
 				src,
@@ -164,7 +164,7 @@ public class NewsRunner {
 				time.toString()
 			);
 
-			CheckPointDTO.CreateCheckPointDTO checkPointDTO = new CheckPointDTO.CreateCheckPointDTO(
+			CheckPointDTO checkPointDTO = new CheckPointDTO(
 				name,
 				categoryNumber,
 				childIndex,

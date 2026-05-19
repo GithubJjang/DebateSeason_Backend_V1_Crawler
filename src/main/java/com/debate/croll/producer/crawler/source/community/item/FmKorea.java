@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -74,10 +75,9 @@ public class FmKorea extends AbstractCommunitySource {
 		try{
 			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
 
-			for (int i = start; i <= CommunityConfig.COMMUNITY_CRAWL_LIMIT; i++) {
-				extractElement(driver,i);
-				Thread.sleep(1500); // 의심을 피하기 위한 설정.
-			}
+			extractElement(driver,-1);
+			Thread.sleep(1500); // 의심을 피하기 위한 설정.
+
 		}
 		catch (Exception exception){
 
@@ -100,82 +100,100 @@ public class FmKorea extends AbstractCommunitySource {
 		}
 	}
 
-	@Transactional
 	public void extractElement(WebDriver driver,int i) {
 
 		String href = null;
+		String src = null;
 
+		int count = 0;
+
+		List<WebElement> items;
 		try{
-			// title & href
-			WebElement titleElement = driver.findElement(By.cssSelector(
-				"#bd_4180795_0 > div > div.fm_best_widget._bd_pc > ul > li:nth-child(" + i + ") > div > h3 > a"));
-			href = titleElement.getAttribute("href");
-			String title = titleElement.getText();
+			WebElement bestWidget = driver.findElement(
+				By.cssSelector(".fm_best_widget._bd_pc")
+			);
 
-			// image
-			String src = null;// 이미지
+			items =
+				bestWidget.findElements(By.cssSelector("ul li"));
+		}
+		catch (NoSuchElementException e){
+			throw new java.util.NoSuchElementException("items을 찾을 수 없습니다. 페이지 요소 변경이 의심됩니다.");
+		}
+
+		for(WebElement e:items){
+
+			if(count>=8){
+				break;
+			}
+
 			try {
-				WebElement imgElement = driver.findElement(By.cssSelector(
-					"#bd_4180795_0 > div > div.fm_best_widget._bd_pc > ul > li:nth-child(" + i
-						+ ") > div > a:nth-child(2) > img"));
 
-				src = imgElement.getAttribute("src");
-			} catch (NoSuchElementException e) {// 이미지가 없는 경우, NoSuchElementException 발생.
+				WebElement titleElement = e.findElement(By.className("title"));
+
+				String title =
+					titleElement.getAttribute("data-original-title");
+
+				href = titleElement.findElement(By.tagName("a")).getAttribute("href");
+
+				WebElement timeElement = e.findElement(By.className("regdate"));
+				String timeString = LocalDate.now() + " " + timeElement.getText();
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"); // Create a DateTimeFormatter with the appropriate pattern
+				LocalDateTime dateTime = LocalDateTime.parse(timeString, formatter); // Parse the string to a LocalDateTime object
+
+				try{
+					WebElement imgElement = e.findElement(By.tagName("img"));
+					src = imgElement.getAttribute("src");
+				}
+				catch (NoSuchElementException noImageException){
+					src = null;
+				}
+
+
+				MediaDTO mediaDTO = new MediaDTO(
+					title,
+					href,
+					src,
+					"정치",
+					CommunityNameList.FmKorea.getName(),
+					Type.COMMUNITY.getName(),
+					0,
+					dateTime.toString()
+				);
+
+				CheckPointDTO checkPointDTO = new CheckPointDTO(
+					name,
+					null,
+					i,
+					Type.COMMUNITY,
+					LocalDateTime.now().toString(),
+					Status.REBOOT
+				);
+
+				crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
 			}
+			catch (Exception exception){
 
-			// time
-			WebElement timeElement = driver.findElement(By.cssSelector(
-				"#bd_4180795_0 > div > div.fm_best_widget._bd_pc > ul > li:nth-child(" + i
-					+ ") > div > div:nth-child(5) > span.regdate"));
-			String timeString = LocalDate.now() + " " + timeElement.getText();
-			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"); // Create a DateTimeFormatter with the appropriate pattern
-			LocalDateTime dateTime = LocalDateTime.parse(timeString, formatter); // Parse the string to a LocalDateTime object
+				boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
+				if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
+					href = null;
+				}
 
-			MediaDTO.CreateMediaDTO mediaDTO = new MediaDTO.CreateMediaDTO(
-				title,
-				href,
-				src,
-				"정치",
-				CommunityNameList.FmKorea.getName(),
-				Type.COMMUNITY.getName(),
-				0,
-				dateTime.toString()
-			);
+				CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
+					exception,
+					OriginClass.CRAWLER,
+					Type.COMMUNITY,
+					name,
+					href);
 
-			CheckPointDTO.CreateCheckPointDTO checkPointDTO = new CheckPointDTO.CreateCheckPointDTO(
-				name,
-				null,
-				i,
-				Type.COMMUNITY,
-				LocalDateTime.now().toString(),
-				Status.REBOOT
-			);
-
-			crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
-
-		}
-		catch (Exception exception){
-
-			boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
-			if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
-				href = null;
+				errorService.save(errorDTO);
 			}
-
-			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
-				exception,
-				OriginClass.CRAWLER,
-				Type.COMMUNITY,
-				name,
-				href);
-
-			errorService.save(errorDTO);
-
-			//Sentry.captureException(e);
+			finally {
+				count++;
+				href=null;
+				src = null;
+			}
 		}
-
-
 
 	}
-
 
 }

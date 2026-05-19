@@ -33,32 +33,14 @@ public class CrawlerScheduler {
 	//@Scheduled(cron = "0 0 17 * * ?",zone = "Asia/Seoul")
 	public void crawl(){
 
-		try{
+		// 1. 커뮤니티 크롤링
+		crawlerRunner.startCommunityCrawler();
 
-			// 1. 커뮤니티 크롤링
-			crawlerRunner.startCommunityCrawler();
+		// 2. 뉴스 크롤링
+		crawlerRunner.startNewsCrawler();
 
-			// 2. 뉴스 크롤링
-			crawlerRunner.startNewsCrawler();
-
-			// 3. 마지막 체크포인트 업데이트
-			checkPointService.updateLastCheckPoint();
-
-
-		}
-		catch (Exception exception){
-
-			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
-				exception,
-				OriginClass.SCHEDULER,
-				Type.DRIVER,
-				null,
-				null);
-
-			errorService.save(errorDTO);
-
-
-		}
+		// 3. 마지막 체크포인트 업데이트
+		checkPointService.updateLastCheckPoint();
 
 	}
 

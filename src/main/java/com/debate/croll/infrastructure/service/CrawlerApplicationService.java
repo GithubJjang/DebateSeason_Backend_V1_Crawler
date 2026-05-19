@@ -27,7 +27,7 @@ public class CrawlerApplicationService {
 	private final CheckPointRepository checkPointRepository;
 
 	@Transactional
-	public void saveMediaAndCheckPoint(MediaDTO.CreateMediaDTO mediaDTO, CheckPointDTO.CreateCheckPointDTO checkPointDTO){
+	public void saveMediaAndCheckPoint(MediaDTO mediaDTO, CheckPointDTO checkPointDTO){
 
 		// 1.
 		MediaEntity mediaEntity = MediaMapper.toEntity(mediaDTO);

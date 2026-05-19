@@ -15,8 +15,7 @@ import com.debate.croll.producer.crawler.mapper.checkpoint.CheckPointProjection;
 import com.debate.croll.producer.crawler.source.community.config.CommunitySourceList;
 import com.debate.croll.producer.crawler.common.OriginClass;
 import com.debate.croll.producer.crawler.common.Type;
-import com.debate.croll.infrastructure.entity.ErrorEntity;
-import com.debate.croll.infrastructure.repository.jpa.ErrorJpaRepository;
+
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.source.news.config.NewsUrlList;
@@ -60,7 +59,7 @@ public class CrawlerRunner {
 			Thread.sleep(10000);
 
 		}
-		catch (InterruptedException exception) {
+		catch (InterruptedException exception) { // 수정
 
 			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
 				exception,

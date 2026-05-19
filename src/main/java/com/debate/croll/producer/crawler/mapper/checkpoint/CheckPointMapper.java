@@ -6,7 +6,7 @@ import com.debate.croll.infrastructure.entity.CheckPointEntity;
 public class CheckPointMapper {
 
 	// 1. DB에 CheckPoint를 저장하기 위한 Entity
-	public static CheckPointEntity toEntity(CheckPointDTO.CreateCheckPointDTO dto){
+	public static CheckPointEntity toEntity(CheckPointDTO dto){
 
 		return CheckPointEntity.builder()
 			.name(dto.name())
