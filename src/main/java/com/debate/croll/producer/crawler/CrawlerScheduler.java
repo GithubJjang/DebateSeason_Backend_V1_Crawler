@@ -1,17 +1,11 @@
 package com.debate.croll.producer.crawler;
 
-import java.time.LocalDateTime;
-
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDTO;
 import com.debate.croll.infrastructure.service.CheckPointService;
 import com.debate.croll.infrastructure.service.ErrorService;
 import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDtoFactory;
-import com.debate.croll.producer.crawler.manager.CrawlerRunner;
-import com.debate.croll.producer.crawler.common.OriginClass;
-import com.debate.croll.producer.crawler.common.Type;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

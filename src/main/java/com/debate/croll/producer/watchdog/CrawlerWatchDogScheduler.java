@@ -9,7 +9,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.debate.croll.infrastructure.service.MediaService;
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.producer.watchdog.service.WatchDogService;
 

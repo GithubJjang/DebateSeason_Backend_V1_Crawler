@@ -1,5 +1,6 @@
 package com.debate.croll.infrastructure.service;
 
+import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
 
 import org.springframework.stereotype.Service;
@@ -36,28 +37,28 @@ public class CrawlerApplicationService {
 		// 2.
 		String name = checkPointDTO.name();
 		Integer subKey = checkPointDTO.subKey();
-		Integer index  = checkPointDTO.crawlIndex();
+		Integer crawlIndex  = checkPointDTO.crawlIndex();
 		Type type = Type.valueOf(mediaDTO.type());
 
 		switch (type){
 			case COMMUNITY -> {
-				if(!checkPointRepository.existsByNameAndCrawlIndex(name, index)){ // 로그가 없다면 <- 엔티티 조회가 아니므로, 새로 만든다.
+				if(!checkPointRepository.existsByName(name)){ // 로그가 없다면 <- 엔티티 조회가 아니므로, 새로 만든다.
 					CheckPointEntity checkPointEntity = CheckPointMapper.toEntity(checkPointDTO);
 					checkPointRepository.save(checkPointEntity);
 				}
-				else{ // 로그가 있다면, updated_at만 수정을 한다. -> 영속성 컨텍스트 등록없이 바로 DB에 등록
+				else{ // 로그가 있다면, crawlIndex와 날짜를 갱신한다.
 					String updatedAt = checkPointDTO.updatedAt();
-					checkPointRepository.updateCheckPoint(updatedAt,name,index);
+					checkPointRepository.updateCheckPoint(updatedAt,name,crawlIndex);
 				}
 			}
 			case NEWS -> {
-				if(!checkPointRepository.existsByNameAndSubKeyAndCrawlIndex(name, subKey, index)){ // 로그가 없다면 <- 엔티티 조회가 아니므로, 영속성 컨텍스트 등록이 안됨
+				if(!checkPointRepository.existsByNameAndSubKeyAndCrawlIndex(name, subKey, crawlIndex)){ // 로그가 없다면 <- 엔티티 조회가 아니므로, 영속성 컨텍스트 등록이 안됨
 					CheckPointEntity checkPointEntity = CheckPointMapper.toEntity(checkPointDTO);
 					checkPointRepository.save(checkPointEntity);
 				}
 				else{
 					String updatedAt = checkPointDTO.updatedAt();
-					checkPointRepository.updateCheckPoint(updatedAt,name,subKey,index);
+					checkPointRepository.updateCheckPoint(updatedAt,name,subKey,crawlIndex);
 				}
 			}
 			default ->

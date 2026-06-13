@@ -16,7 +16,7 @@ import com.debate.croll.infrastructure.entity.CheckPointEntity;
 public interface CheckPointJpaRepository extends JpaRepository<CheckPointEntity,Long> {
 
 	// 1-1. 체크포인트 존재 유무 확인(Community 전용)
-	boolean existsByNameAndCrawlIndex(String name, Integer crawlIndex); // exists는 일단 찾으면 거기서 조회를 멈춘다. 이와 달리 count는 다 센다.
+	boolean existsByName(String name); // exists는 일단 찾으면 거기서 조회를 멈춘다. 이와 달리 count는 다 센다.
 	
 	// 1-2. 체크포인트 존재 유무 확인(News 전용)
 	boolean existsByNameAndSubKeyAndCrawlIndex(String name, Integer subKey, Integer crawlIndex);
@@ -38,14 +38,15 @@ public interface CheckPointJpaRepository extends JpaRepository<CheckPointEntity,
 	@Query(
 		value = """
         UPDATE check_point
-        SET updated_at = :updatedAt
+        SET crawl_index = :crawlIndex,
+        updated_at = :updatedAt
         WHERE name = :name
         AND sub_key IS NULL
-        AND crawl_index = :crawlIndex
         """,
 		nativeQuery = true
 	)
-	void updateCheckPoint(@Param("updatedAt") String updatedAt,
+	void updateCheckPoint(
+		@Param("updatedAt") String updatedAt,
 		@Param("name") String name,
 		@Param("crawlIndex") int crawlIndex);
 
@@ -61,7 +62,8 @@ public interface CheckPointJpaRepository extends JpaRepository<CheckPointEntity,
         """,
 		nativeQuery = true
 	)
-	void updateCheckPoint(@Param("updatedAt") String updatedAt,
+	void updateCheckPoint(
+		@Param("updatedAt") String updatedAt,
 		@Param("name") String name,
 		@Param("subkey") Integer subKey,
 		@Param("crawlIndex") int crawlIndex);

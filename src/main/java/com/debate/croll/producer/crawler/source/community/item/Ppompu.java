@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
+
 import java.util.List;
 
 import org.openqa.selenium.By;
@@ -26,12 +26,11 @@ import com.debate.croll.producer.crawler.common.Type;
 import com.debate.croll.webdriver.WebDriverFactory;
 import com.debate.croll.webdriver.WebDriverRunner;
 import com.debate.croll.producer.crawler.common.OriginClass;
-import com.debate.croll.producer.crawler.source.community.config.CommunityConfig;
+
 import com.debate.croll.producer.crawler.source.community.config.CommunityNameList;
-import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
+import com.debate.croll.producer.crawler.source.community.item.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.common.Status;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,14 +49,12 @@ public class Ppompu extends AbstractCommunitySource {
 
 	private final String name = CommunityNameList.Ppompu.name();
 
-	private int start = 4;
-
 	@Override
 	public String getCommunityName() {
 		return this.name;
 	}
 
-	public void crawl(Status status,int point) throws InterruptedException {
+	public void crawl(int startPoint){
 
 		// WebDriver 객체 생성
 		WebDriverRunner runner = new WebDriverRunner();
@@ -67,17 +64,9 @@ public class Ppompu extends AbstractCommunitySource {
 
 		runner.run(driver,url);
 
-		// 예기치 못한 장애로 인해서, 리부팅 시 발동되는 조건
-		if(status.name().equals(Status.REBOOT.getName())){
-			start = point;
-		}
-
 		try{
 			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-
-			extractElement(driver,-1);
-			Thread.sleep(1500);
-
+			extractElement(driver,startPoint);
 		}
 		catch (Exception exception){
 
@@ -94,25 +83,22 @@ public class Ppompu extends AbstractCommunitySource {
 
 		}
 		finally {
-
 			if (driver != null) {
-
 				driver.quit();
-				Thread.sleep(3000); // 의도적인 컨텍스트 스위칭 유발로, 다른 스레드 작업 처리를 위한 목적.
 				log.info("successfully shut driver");
 			}
-
 		}
-
-
 	}
 
-	public void extractElement(WebDriver driver, int i) {
+	public void extractElement(WebDriver driver, int startPoint) {
 
 		String href = null;
 		String src = null;
 
-		int count = 0;
+		int crawlIndex = 0;
+		if(startPoint!=-1){
+			crawlIndex = startPoint;
+		}
 
 		List<WebElement> items;
 		try {
@@ -122,13 +108,11 @@ public class Ppompu extends AbstractCommunitySource {
 			throw new java.util.NoSuchElementException("items을 찾을 수 없습니다. 페이지 요소 변경이 의심됩니다.");
 		}
 
-		for(WebElement e : items){
-
-			if(count>=8){
-				break;
-			}
+		while (crawlIndex<8) {
 
 			try {
+				WebElement e = items.get(crawlIndex);
+
 				WebElement thumbElement = e.findElement(By.className("baseList-thumb"));
 				href = thumbElement.getAttribute("href");
 
@@ -164,7 +148,7 @@ public class Ppompu extends AbstractCommunitySource {
 				CheckPointDTO checkPointDTO = new CheckPointDTO(
 					name,
 					null,
-					i,
+					crawlIndex+1,
 					Type.COMMUNITY,
 					LocalDateTime.now().toString(),
 					Status.REBOOT
@@ -173,7 +157,6 @@ public class Ppompu extends AbstractCommunitySource {
 				crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
 			}
 			catch (Exception exception){
-
 				boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
 				if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
 					href = null;
@@ -191,11 +174,11 @@ public class Ppompu extends AbstractCommunitySource {
 				//Sentry.captureException(e);
 			}
 			finally {
-				count++;
-				href=null;
+				crawlIndex++;
+				href = null;
 				src = null;
 			}
-		}
 
+		}
 	}
 }

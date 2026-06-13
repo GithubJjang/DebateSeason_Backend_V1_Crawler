@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import com.debate.croll.producer.common.ExceptionClassfier;
 import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDtoFactory;
 import com.debate.croll.producer.crawler.source.community.config.CommunityNameList;
-import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
+import com.debate.croll.producer.crawler.source.community.item.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.source.community.config.CommunityUrlList;
 import com.debate.croll.producer.crawler.dto.CheckPointDTO;
 import com.debate.croll.producer.crawler.dto.error.CrawlerErrorDTO;
@@ -26,11 +26,9 @@ import com.debate.croll.webdriver.WebDriverFactory;
 import com.debate.croll.webdriver.WebDriverRunner;
 import com.debate.croll.producer.crawler.common.Type;
 import com.debate.croll.producer.crawler.common.OriginClass;
-import com.debate.croll.producer.crawler.source.community.config.CommunityConfig;
 
 import com.debate.croll.producer.crawler.common.Status;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -49,8 +47,6 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 
 	private final String name = CommunityNameList.BobaeDream.name();
 
-	private int start = 1;
-
 	@Override
 	public String getCommunityName() {
 		return this.name;
@@ -58,7 +54,7 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 
 	// 1. 정상적인 작동
 	@Override
-	public void crawl(Status status,int point) throws InterruptedException {
+	public void crawl(int startPoint) {
 
 		// WebDriver 객체 생성
 		WebDriverRunner runner = new WebDriverRunner();
@@ -68,15 +64,9 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 
 		runner.run(driver,url);
 
-		// 예기치 못한 장애로 인해서, 리부팅 시 발동되는 조건
-		if(status.name().equals(Status.REBOOT.getName())){
-			start = point;
-		}
 		try{
 			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-
-			extractElement(driver,-1);
-			Thread.sleep(1500);
+			extractElement(driver,startPoint);
 		}
 		catch (Exception exception){
 
@@ -91,22 +81,23 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 
 		}
 		finally {
-
 			if (driver != null) {
+				// Thread.sleep을 내부에 쓸 경우, 비즈니스 로직과 interruptException이 섞일 수 있음.
 				driver.quit();
-				Thread.sleep(3000); // 의도적인 컨텍스트 스위칭 유발로, 다른 스레드 작업 처리를 위한 목적.
 				log.info("successfully shut driver");
 			}
 		}
 	}
 
-	public void extractElement(WebDriver driver,int i) {
+	public void extractElement(WebDriver driver,int startPoint) {
 
 		String href = null;
+		int crawlIndex = 0;
+		if(startPoint!=-1){
+			crawlIndex = startPoint;
+		}
 
-		int count = 0;
 		List<WebElement> rows;
-
 		try{
 			WebElement boardListWebElement = driver.findElement(By.cssSelector("#boardlist tbody"));
 			rows = boardListWebElement.findElements(By.tagName("tr"));
@@ -115,13 +106,10 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 			throw new java.util.NoSuchElementException("items을 찾을 수 없습니다. 페이지 요소 변경이 의심됩니다.");
 		}
 
-		for(WebElement td:rows){
-
-			if(count>=8){
-				break;
-			}
+		while (crawlIndex<8){
 
 			try {
+				WebElement td = rows.get(crawlIndex);
 
 				WebElement titleElement = td.findElement(By.className("bsubject"));
 				String title = titleElement.getText();
@@ -153,14 +141,13 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 				CheckPointDTO checkPointDTO = new CheckPointDTO(
 					name,
 					null,
-					i,
+					crawlIndex+1,// id값은 0부터 시작을 하지 않으므로, 한칸씩 땡겨줘야 한다.
 					Type.COMMUNITY,
 					LocalDateTime.now().toString(),
 					Status.REBOOT
 				);
 
 				crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);// @Transactional 걸어서 media & checkpoint 안전하게 저장
-
 			}
 			catch (Exception exception){
 
@@ -177,15 +164,13 @@ public class BobaeDream extends AbstractCommunitySource { // 이미지 없음
 					href);
 
 				errorService.save(errorDTO);
-				//Sentry.captureException(e);
 			}
 			finally {
-				count++;
+				crawlIndex++;
 				href=null;
 			}
+
 		}
 
-
 	}
-
 }

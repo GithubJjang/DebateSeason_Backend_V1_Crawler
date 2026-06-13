@@ -1,7 +1,8 @@
-package com.debate.croll.producer.crawler.manager;
+package com.debate.croll.producer.recovery;
 
 import org.springframework.stereotype.Component;
 
+import com.debate.croll.producer.crawler.CrawlerRunner;
 import com.debate.croll.producer.crawler.common.Status;
 import com.debate.croll.producer.crawler.mapper.checkpoint.CheckPointProjection;
 import com.debate.croll.infrastructure.service.CheckPointService;
@@ -20,7 +21,7 @@ public class CrawlerRecoveryManager {
 
 	public void restartCrawler(){
 
-		// 체크포인트 불러오기
+		// 최신 체크포인트 불러오기
 		CheckPointProjection checkPointProjection = checkPointService.getMostRecentCheckPoint();
 
 		if(checkPointProjection!=null){ // 체크포인트가 있다면, 실행
@@ -29,7 +30,7 @@ public class CrawlerRecoveryManager {
 			Status status = checkPointProjection.getStatus();
 
 			if(status==Status.DONE){
-				log.info("All Jobs done. because the checkpoint status is [DONE]");
+				log.info("All crawling Jobs done. because the checkpoint status is [DONE]");
 				return;
 			}
 

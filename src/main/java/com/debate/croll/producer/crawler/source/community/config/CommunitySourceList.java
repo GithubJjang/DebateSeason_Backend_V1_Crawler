@@ -13,7 +13,7 @@ import com.debate.croll.producer.crawler.source.community.item.MlbPark;
 import com.debate.croll.producer.crawler.source.community.item.Ppompu;
 import com.debate.croll.producer.crawler.source.community.item.RuliWeb;
 import com.debate.croll.producer.crawler.source.community.item.TodayHumor;
-import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
+import com.debate.croll.producer.crawler.source.community.item.template.AbstractCommunitySource;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

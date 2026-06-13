@@ -11,20 +11,20 @@ public interface CheckPointRepository {
 	void save(CheckPointEntity checkPointEntity);
 
 	// 1-1. 체크포인트 존재 유무 확인(Community 전용)
-	boolean existsByNameAndCrawlIndex(String name, Integer crawlIndex); // exists는 일단 찾으면 거기서 조회를 멈춘다. 이와 달리 count는 다 센다.
+	boolean existsByName(String name); // exists는 일단 찾으면 거기서 조회를 멈춘다. 이와 달리 count는 다 센다.
+
+	// 체크 포인트 업데이트
+	void updateCheckPoint( // (Community 전용)
+		String updatedAt,
+		String name,
+		int crawlIndex
+	);
 
 	// 1-2. 체크포인트 존재 유무 확인(News 전용)
 	boolean existsByNameAndSubKeyAndCrawlIndex(String name, Integer subKey, Integer crawlIndex);
 
 	// 2. 최신 체크포인트 불러오기
 	Optional<CheckPointProjection> findLatestCheckPoint();
-
-	// 2. 체크 포인트 업데이트 (날짜만 업데이트를 하는데 굳이 객체를 조회해서 변경 감지를 할 필요가 없다.)
-	void updateCheckPoint( // (Community 전용)
-		String updatedAt,
-		String name,
-		int crawlIndex
-	);
 
 	void updateCheckPoint( // (News 전용)
 		String updatedAt,

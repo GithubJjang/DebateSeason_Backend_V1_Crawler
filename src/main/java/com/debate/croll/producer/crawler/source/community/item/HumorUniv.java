@@ -4,8 +4,7 @@ import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
+
 import java.util.List;
 
 import org.openqa.selenium.By;
@@ -14,7 +13,6 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import com.debate.croll.producer.common.ExceptionClassfier;
 import com.debate.croll.producer.crawler.dto.CheckPointDTO;
@@ -28,12 +26,11 @@ import com.debate.croll.webdriver.WebDriverFactory;
 import com.debate.croll.webdriver.WebDriverRunner;
 import com.debate.croll.producer.crawler.source.community.config.CommunityUrlList;
 import com.debate.croll.producer.crawler.common.OriginClass;
-import com.debate.croll.producer.crawler.source.community.config.CommunityConfig;
+
 import com.debate.croll.producer.crawler.source.community.config.CommunityNameList;
-import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
+import com.debate.croll.producer.crawler.source.community.item.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.common.Status;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,17 +47,14 @@ public class HumorUniv extends AbstractCommunitySource {
 
 	private final ExceptionClassfier exceptionClassfier;
 
-	private final int init = 3;
-
 	private final String name = CommunityNameList.HumorUniv.name();
-	private int start = 0;
 
 	@Override
 	public String getCommunityName() {
 		return this.name;
 	}
 
-	public void crawl(Status status,int point) throws InterruptedException {
+	public void crawl(int startPoint){
 
 		// WebDriver 객체 생성
 		WebDriverRunner runner = new WebDriverRunner();
@@ -70,17 +64,9 @@ public class HumorUniv extends AbstractCommunitySource {
 
 		runner.run(driver,url);
 
-		// 예기치 못한 장애로 인해서, 리부팅 시 발동되는 조건
-		if(status.name().equals(Status.REBOOT.getName())){
-			start = point;
-		}
-
 		try{
 			driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(20));
-			extractElement(driver,-1); // 호환을 위해서 유지.
-
-			Thread.sleep(1500); // 의심을 피하기 위한 설정.
-
+			extractElement(driver,startPoint); // 호환을 위해서 유지.
 		}
 		catch (Exception exception){
 
@@ -95,24 +81,22 @@ public class HumorUniv extends AbstractCommunitySource {
 
 		}
 		finally {
-
 			if (driver != null) {
-
 				driver.quit();
-				Thread.sleep(3000); // 의도적인 컨텍스트 스위칭 유발로, 다른 스레드 작업 처리를 위한 목적.
 				log.info("successfully shut driver");
 			}
-
 		}
-
 	}
 
-	public void extractElement(WebDriver driver,int i) {
+	public void extractElement(WebDriver driver,int startPoint) {
 
 		String href = null;
 		String src = null;
 
-		int count = 0;
+		int crawlIndex = 0;
+		if(startPoint!=-1){
+			crawlIndex = startPoint;
+		}
 
 		List<WebElement> webElements;
 
@@ -123,13 +107,10 @@ public class HumorUniv extends AbstractCommunitySource {
 			throw new java.util.NoSuchElementException("items을 찾을 수 없습니다. 페이지 요소 변경이 의심됩니다.");
 		}
 
-		for(WebElement e : webElements){
-
-			if(count==8){
-				break;
-			}
+		while (crawlIndex<8){
 
 			try {
+				WebElement e = webElements.get(crawlIndex);
 
 				// 1. href
 				WebElement rawHref = e.findElement(
@@ -205,17 +186,15 @@ public class HumorUniv extends AbstractCommunitySource {
 				CheckPointDTO checkPointDTO = new CheckPointDTO(
 					name,
 					null,
-					i,
+					crawlIndex+1,
 					Type.COMMUNITY,
 					LocalDateTime.now().toString(),
 					Status.REBOOT
 				);
 
 				crawlerApplicationService.saveMediaAndCheckPoint(mediaDTO,checkPointDTO);
-
 			}
 			catch (Exception exception){
-
 				boolean isUniqueConstraintViolation = exceptionClassfier.isUniqueConstraintViolation(exception);
 				if(isUniqueConstraintViolation){ // 데이터 중복으로 발생한 에러라면, href를 저장하지 않는다. 그렇지 않다면, url이라도 저장해서 recovery를 해서 누락을 막자.
 					href = null;
@@ -229,14 +208,13 @@ public class HumorUniv extends AbstractCommunitySource {
 					href);
 
 				errorService.save(errorDTO);
-
 			}
 			finally {
-				count++;
+				crawlIndex++;
 				href=null;
 				src = null;
 			}
 		}
-	}
 
+	}
 }

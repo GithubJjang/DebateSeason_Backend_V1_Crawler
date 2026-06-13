@@ -1,6 +1,5 @@
-package com.debate.croll.producer.crawler.manager;
+package com.debate.croll.producer.crawler;
 
-import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
@@ -17,7 +16,7 @@ import com.debate.croll.producer.crawler.common.OriginClass;
 import com.debate.croll.producer.crawler.common.Type;
 
 import com.debate.croll.producer.crawler.common.Status;
-import com.debate.croll.producer.crawler.source.community.template.AbstractCommunitySource;
+import com.debate.croll.producer.crawler.source.community.item.template.AbstractCommunitySource;
 import com.debate.croll.producer.crawler.source.news.config.NewsUrlList;
 import com.debate.croll.producer.crawler.source.news.runner.NewsRunner;
 
@@ -42,33 +41,20 @@ public class CrawlerRunner {
 	private final ErrorService errorService;
 
 
-	public void startCommunityCrawler() {
+	public void startCommunityCrawler() { // 1. 커뮤니티 크롤링
 
 		List<AbstractCommunitySource> communityCrawlList = communitySourceList.getSourceList();
-
 		try {
-			// 1. 커뮤니티 크롤링
 			log.info("Start Community Crawling ~ ");
-
-			for (AbstractCommunitySource e : communityCrawlList) {
-				e.crawl(Status.STEADY, -1);
+			for (AbstractCommunitySource source : communityCrawlList) {
+				source.crawl(-1);
 				Thread.sleep(randomDelay.getCommunityCrawlerDelay()); // 네트워크 폭주를 방지하기 위한 설정.
 			}
-
 			// Cool down
 			Thread.sleep(10000);
-
 		}
-		catch (InterruptedException exception) { // 수정
-
-			CrawlerErrorDTO errorDTO = crawlerErrorDtoFactory.createErrorDto(
-				exception,
-				OriginClass.CRAWLER_RUNNER,
-				Type.COMMUNITY,
-				null,
-				null);
-
-			errorService.save(errorDTO);
+		catch (InterruptedException e) {
+			Thread.currentThread().interrupt(); // 스레드 무한 루프 탈출을 위해서, 인터럽트 예외를 처리한다.
 		}
 	}
 
@@ -76,56 +62,30 @@ public class CrawlerRunner {
 
 		List<AbstractCommunitySource> communitySourcesList = communitySourceList.getSourceList();
 
-		// int size = communitySourcesList.size();
-		// int nextStartIndex = 0;
-
 		boolean isLock = true;
 
 		try{
-
-			// 1.
+			// 1. 커뮤니티 크롤링 작업 복구.
 			for (AbstractCommunitySource source : communitySourcesList) {
-
-				// 타겟을 찾았다. -> 타겟의 끊어진 부분부터 시작해서 나머지 전체를 시작한다.
+				// 타겟을 찾았다. -> 작업 중단 지점 이후부터 작업을 실행한다.
 				if (source.getCommunityName().equals(checkPointProjection.getName())) {
 
-					Status status = checkPointProjection.getStatus();//REBOOT
-					source.crawl(status, checkPointProjection.getCrawlIndex()+1);// 다음꺼부터 크롤링하기
-					// nextStartIndex++; // 다음을 겨누고 있어야 한다.
-					// break;
+					source.crawl(checkPointProjection.getCrawlIndex());// 다음꺼부터 크롤링하기
 
 					isLock = false; // isLock 해지 -> 다음꺼는 정상적으로 가져올 수 있다.
 					continue; // 중복 실행을 막기 위해서, continue를 사용.
-
 				}
-
 				if(!isLock){
-					source.crawl(Status.STEADY,-1);
+					source.crawl(-1);
 					Thread.sleep(randomDelay.getCommunityCrawlerDelay());
 				}
-
-				//nextStartIndex++;
-
 			}
-
-			// 2. 커뮤니티의 남은 부분 전체 실행하기
-			// for(int i=nextStartIndex; i<size; i++){
-			// 	AbstractCommunitySource source = communitySourcesList.get(i);
-			// 	source.crawl(Status.STEADY,-1);
-			// 	Thread.sleep(5000); // 네트워크 폭주를 방지하기 위한 설정.
-			// }
-
-			// 3. News는 정상적으로 실행하기
+			// 2. 뉴스 크롤링 작업 정상 진행.
 			this.startNewsCrawler();
-
 		}
-		catch (Exception e){
-
+		catch (InterruptedException e){
+			Thread.currentThread().interrupt(); // 스레드 무한 루프 탈출을 위해서, 인터럽트 예외를 처리한다.
 		}
-
-
-
-
 	}
 
 	public void startNewsCrawler(){

@@ -24,8 +24,8 @@ public class CheckPointRepositoryImpl implements CheckPointRepository {
 	}
 
 	@Override
-	public boolean existsByNameAndCrawlIndex(String name, Integer crawlIndex) {
-		return checkPointJpaRepository.existsByNameAndCrawlIndex(name, crawlIndex);
+	public boolean existsByName(String name) {
+		return checkPointJpaRepository.existsByName(name);
 	}
 
 	@Override
@@ -39,7 +39,7 @@ public class CheckPointRepositoryImpl implements CheckPointRepository {
 	}
 
 	@Override
-	public void updateCheckPoint(String updatedAt, String name, int crawlIndex) {
+	public void updateCheckPoint(String updatedAt,String name,int crawlIndex) {
 		checkPointJpaRepository.updateCheckPoint(updatedAt,name,crawlIndex);
 	}
 

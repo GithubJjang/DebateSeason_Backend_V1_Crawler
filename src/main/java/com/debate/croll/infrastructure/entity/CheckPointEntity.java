@@ -36,8 +36,9 @@ public class CheckPointEntity {
 	@Column(name = "sub_key")
 	private Integer subKey;
 
-	@Column(name = "crawl_index") // 실행 인덱스, index는 예약어라서 안됨.
-	private Integer crawlIndex;
+	@Builder.Default
+	@Column(name = "crawl_index")
+	private Integer crawlIndex = 0;
 
 	@Enumerated(EnumType.STRING)// COMMUNITY, NEWS -> 만약 ENUM 값에 변경이 발생할 경우, 새로 테이블을 생성해야 한다.
 	private Type type;
